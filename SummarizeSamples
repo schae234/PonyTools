@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+from optparse import OptionParser
+from Tools import skipno
+import pandas as pd
+
+def main(args):
+    parser = OptionParser()
+    parser.add_option('--design',action='append')    
+    parser.add_option('--type', action='append')
+    parser.add_option('--call',action='append')
+    parser.add_option('--samples')
+
+    opt,args = parser.parse_args()
+
+    samples = pd.read_csv(opt.samples)
+    samples['BestArray']+='.CEL'
+    
+    for design in opt.design:
+        for type in opt.type:
+            for call in opt.call:
+                path = os.path.join(design,type,call,'AxiomGT1.report.txt')
+                results = pd.read_table(path,skiprows=skipno(path)) 
+                results = results[['cel_files','call_rate']]
+                results.columns = ['cel_files','CR_{}'.format(call)]
+                samples = samples.merge(results,how='left',left_on='BestArray',right_on='cel_files')
+
+    samples.to_csv('SummarizedSamples.csv',index=False)
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
