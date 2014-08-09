@@ -3,13 +3,7 @@ import pandas as pd
 import sys
 import os
 from optparse import OptionParser
-
-def skipno(filename):
-    with open(filename,'r') as IN:
-        skip = 0
-        while IN.readline().startswith("#"):
-            skip += 1
-        return skip
+from Tools import skipno
 
 def log(message,*vars):
     print("[LOG] ", message.format(*vars),file=sys.stderr)
