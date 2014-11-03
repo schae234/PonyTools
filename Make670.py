@@ -34,15 +34,24 @@ def main():
             (BLOOD.ConversionType == 'PolyHighResolution') |
             (BLOOD.ConversionType == 'MonoHighResolution') |
             ((BLOOD.ConversionType == 'NoMinorHom') & (BLOOD.HWE > 10e-5))
-        ][['probeset_id','cust_chr','cust_pos','cust_id']],
+        ][['probeset_id','cust_chr','cust_pos','cust_id','tissue','ConversionType']],
         HAIR[
             (HAIR.ConversionType == 'PolyHighResolution') |
             (HAIR.ConversionType == 'MonoHighResolution') |
             ((HAIR.ConversionType == 'NoMinorHom') & (HAIR.HWE > 10e-5))
-        ][['probeset_id','cust_chr','cust_pos','cust_id']]
-    ]).drop_duplicates()
-    # REad in the Genotype
+        ][['probeset_id','cust_chr','cust_pos','cust_id','tissue','ConversionType']]
+    ]).drop_duplicates(cols='probeset_id')
+    # Sometimes blood and hair disagree on loci with two probes. Sort by Conversion Type
+    # then drop duplicates
+    ConversionRank = {
+        'PolyHighResolution' : 1,
+        'MonoHighResolution' : 2,
+        'NoMinorHom'         : 3
+    }
+    TagSet['ProbeTie'] = TagSet['ConversionType'].apply(lambda x: ConversionRank[x])
+    TagSet = TagSet.sort(['cust_id','ProbeTie']).drop_duplicates('cust_id')
 
+    # REad in the Genotype
     blood = AxiomGenos.from_files(
         "/project/mccuelab/rob/MNEc2M/Affy_MNEc2M/CallTwo/Samples.csv",
         *["/project/mccuelab/rob/MNEc2M/Affy_MNEc2M/CallTwo/{}/{}/geno/AxiomGT1.calls.txt".format(x,y)
@@ -62,7 +71,7 @@ def main():
         "Axiom_MNEc2M_C_Annotation.r1.csv"
     )
     geno.annots = annot
-    geno.to_vcf('SNP.vcf')
+    geno.to_vcf('/project/mccuelab/rob/CompleteVCF/MNE/SNP.vcf')
  
     
     

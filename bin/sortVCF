@@ -55,7 +55,7 @@ def main(args):
     parser.add_option('--fasta',help='fasta file')
     parser.add_option('--out',default='sorted.vcf',help='output name [default: sorted.vcf]')
 
-    options.args = parser.parse_args(args)
+    options,args = parser.parse_args(args)
     
     sortVCF(options.vcf,options.fasta,out=options.out)
 
