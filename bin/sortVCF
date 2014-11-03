@@ -2,6 +2,10 @@
 import sys
 from optparse import OptionParser
 
+
+def log(message,*formatting):
+    print(message.format(*formatting),file=sys.stderr)
+
 def sortVCF(vcf_file,fasta_file,temp_dir="/tmp",out="sorted.vcf"):
     headers = list()
     variants = list()
