@@ -11,6 +11,12 @@ import numpy as np
 import multiprocessing 
 import time
 import math
+from subprocess import Popen, PIPE
+
+
+
+beagle_path = '/project/mccuelab/shared/bin/b4.r1274.jar'
+vcftools_path = '/project/mccuelab/shared/bin/vcftools_0.1.11/bin/vcftools'
 
 
 def skipno(filename,startswith="#"):
@@ -289,9 +295,9 @@ class Variant(object):
             pass
         raise Exception("Value not found")
     def __repr__(self):
-        return "\n".join([self.chrom, self.pos, self.id, self.ref, 
+        return "\n".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
                     self.alt, self.qual, self.filter, self.info, 
-                    self.format ]+ self.genotypes)
+                    self.format ]+ self.genotypes))
     def genos(self,samples_i=None,format_field='GT',transform=None):
         ''' return alleles *in order* for samples '''
         if not transform:
@@ -378,8 +384,6 @@ class Allele(object):
             1  :'1/0',
             2  :'1/1',
         }[allele_code]
-
-        
             
 class VCF(object):
     def __init__(self,vcffile,force=False):
@@ -388,6 +392,7 @@ class VCF(object):
         # keep track of a bunch of indexes
         self.idmap = {}
         self.posmap = defaultdict(dict)
+        self.indexmap = []
         # Keep track of samples
         self.samples = []
         # experimental genotype data frame
@@ -397,7 +402,7 @@ class VCF(object):
     def index(self,force=False):
         if not os.path.exists(self.vcffile.name+'.pdx') or force:
             # create the index file
-            log('Index file does not exist, indexing now')
+            log('Index file does not exist for {}, indexing now'.format(self.vcffile.name))
             cur_byte = 0
             self.vcffile.seek(0)
             for line in self.vcffile:
@@ -412,18 +417,21 @@ class VCF(object):
                     for id in ids.split(','): #sometimes there are multiple ids...
                         self.idmap[id] = cur_byte
                     self.posmap[chrom][pos] = cur_byte
+                    self.indexmap.append(cur_byte)
                 cur_byte += len(line)
             self.vcffile.seek(0)
             # pickle index file for later use
-            pickle.dump((self.idmap,self.posmap,self.samples),open(self.vcffile.name+".pdx",'wb'))
+            pickle.dump((self.idmap,self.posmap,self.samples,self.indexmap),open(self.vcffile.name+".pdx",'wb'))
         else:
             # read the index file
-            self.idmap,self.posmap,self.samples = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
+            self.idmap,self.posmap,self.samples,self.indexmap = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
 
     def iter_variants(self):
         ''' returns variant generator, for iteration. Should be memory efficient '''
         self.vcffile.seek(0)
         return (Variant(line) for line in self.vcffile if not line.startswith('#'))
+    def iter_chroms(self):
+        return (chrom for chroms in self.posmap.keys())
 
     def _load_genos(self):
         if not self.genotypes.empty:
@@ -431,7 +439,9 @@ class VCF(object):
         log("Loading genos for {}",self.vcffile.name)
         alleles = []
         ids = []
-        for variant in self.iter_variants():
+        for variant in self.iter_variants():  # We only support bi-allelic SNPS right now!!!!
+            if not variant.biallelic:
+                continue
             alleles.append([variant.chrom,variant.pos] + variant.genos(transform = Allele.vcf2geno))
             ids.append(variant.id)
         self.genotypes = pd.DataFrame(alleles,index=ids,columns=['chrom','pos']+self.samples)
@@ -448,8 +458,22 @@ class VCF(object):
         self.vcffile.seek(byte)
         return Variant(self.vcffile.readline())
 
+    def __len__(self):
+        return len(self.indexmap)
+
+    @property
+    def shape(self):
+        return (len(self),len(self.samples))
+
+    @property
+    def intervals(self):
+        return ["{}:{}".format(chrom,pos) for chrom in self.posmap.keys() for pos in self.posmap[chrom].keys() ]
+
+    def ix(self,index):
+        return self[self.indexmap[index]]
+
     def pos(self,chrom,pos):
-        return self[self.posmap[chr][pos]]
+        return self[self.posmap[chrom][int(pos)]]
 
     def id(self,id):
         return self[self.idmap[id]]
@@ -478,11 +502,29 @@ class VCF(object):
             for sample in self.samples:
                 print("{}\t{}\t0\t0\t0\t0".format(fam_id,sample),file=OUT) 
 
-    def to_fastTagger(self,prefix=None):
+    def to_fastTagger(self,prefix=None,maf=0.01,r2=0.99):
         '''outputs to fastTAGGER format. will split by chromosome'''
         if prefix is None:
-            prefix = self.vcffile.name.replace('.vcf','')
+            prefix = os.path.basename(self.vcffile.name.replace('.vcf',''))
         # Check to see if data is phased
+        with open(prefix+'.par','w') as OUT:
+            print("\n".join([
+               'data_maf={}.maf'.format(prefix),
+               'data_matrix={}.matrix'.format(prefix),
+               'min_maf={}'.format(maf),
+               'window_len=100000',
+               'min_r2_1={}'.format(r2),
+               'min_r2_2={}'.format(r2),
+               'min_r2_3={}'.format(r2),
+               'max_len=3',
+               'max_merge_window_len=100000',
+               'min_bin_size=0',
+               'max_covered_times=0',
+               'mem_size=0',
+               'max_tagSNP_num=0.00',
+               'model=MMTagger',
+               'output={}_TagSet_MAF_{}_R2_{}'.format(prefix,maf,r2),
+            ]),file=OUT)
         with open(prefix+'.maf','w') as MAF, open(prefix+'.matrix','w') as MAT:
             # We need to make two files, data_maf and data_matrix.
             for i,variant in enumerate(self.iter_variants()):
@@ -509,6 +551,42 @@ class VCF(object):
                 print("{}\t{}\t{}\t{}\t{}".format(variant.id,variant.pos,major,minor,maf),file=MAF)
                 print(" ".join(genos),file=MAT)
 
+    def to_hapblock(self,prefix=None):
+        if prefix is None:
+            prefix = os.path.basename(self.vcffile.name.replace('.vcf',''))
+        with open(prefix+'.par','w') as PAR:
+            print("\n".join([
+                "{}".format(len(self.samples)),
+                "{}".format(len(self.indexmap)),
+                "100000",
+                "1",
+                "3 {} {}".format(prefix+'.hapdat',prefix+'.blocks'),
+                "2 0.80 0.0499",
+                "6 0.80 0.50",
+                "2",
+                "1 1 1 {}".format(prefix+'.hapids'),
+                "1 {}".format(prefix+".happattern"),
+                "2"
+            ]),file=PAR)
+        with open(prefix+'.hapdat','w') as DAT, open(prefix+'.happos','w') as POS, open(prefix+'.hapids','w') as IDS:
+            # load the genotype data
+            self._load_genos()
+            # Sort by position
+            self.genotypes = self.genotypes.sort('pos',ascending=True)
+            # print location to pos file
+            print(len(self.genotypes),"\n".join(map(str,self.genotypes['pos'])),file=POS)
+            # print the SNP names 
+            print(len(self.genotypes),"\n".join(map(str,self.genotypes.index)),file=IDS)
+            print("{}\t{}".format(len(self.samples),len(self.genotypes)))
+            genomap = {
+                -1 : (0,0), 
+                0 : (1,1),
+                1 : (1,2),
+                2 : (2,2)
+            }
+            for indiv,geno_series in self.genotypes.transpose()[2:].iterrows():
+                print(indiv+"\t",*list(chain(*map(lambda x: genomap[x], geno_series))),sep=" ",file=DAT)
+
     def to_hmp(self,prefix=None):
         ''' outputs to HapMap format '''
         if prefix is None:
@@ -528,44 +606,81 @@ class VCF(object):
                         [geno.replace('0',var.ref).replace('1',var.alt).replace('|','') for geno in var.genos()]
                 ),file=HMP)
 
-class progress_bar(object):
-    def __init__(self,manager,interval=10):
-        self.interval = interval
-        self.lock = manager.Lock()
-        self.old_per = manager.Value(float,0.0)
-    def update(self,cur_per):
-        cur_per = math.floor(cur_per)
-        if cur_per > self.old_per.value and cur_per % self.interval == 0:
-            self.lock.acquire()
-            print("\t\t{} {}% Complete".format(time.ctime(),cur_per))
-            self.old_per.set(cur_per)
-            self.lock.release()
+    def to_LRTag(self,ld_file,freq_file,prefix=None):
+        log("Processing {}",self.vcffile.name)
+        if prefix is None:
+            prefix = self.vcffile.name.replace('.vcf','')
+        # load the pos to id mappings
+        idmap = {}
+        log("Building idmap")
+        for var in self.iter_variants():
+            idmap[(str(var.chrom),str(var.pos))] = var.id
+        # process ld file
+        log('Ouputting lods')
+        with open(prefix+'.lod','w') as OUT, open(ld_file,'r') as IN:
+            header  = IN.readline()
+            for line in IN:
+                chrom,pos1,pos2,n,r2 = line.strip().split()
+                print("{}\t{}\t{}".format(idmap[chrom,pos1],idmap[chrom,pos2],r2),file=OUT)
+        # process freq file
+        log('Ouputting mafs')
+        with open(prefix+'.maf','w') as OUT, open(freq_file,'r') as IN:
+            header = IN.readline()
+            for line in IN:
+                chrom,pos,n,nchrom,*freqs = line.strip().split()
+                if int(n) > 2: # only biallelic
+                    continue
+                print("{}\t{}".format(self.pos(chrom,pos).id,min(freqs)),file=OUT)
 
-def _Effectiveness(tpl):
-    hidden,tag,r2_cutoff,distance,pb,i,total = tpl           
-    hidden_non_missing = hidden[1][2:] != -1
-    # only look at interactions within range
-    cur_per = i/total
-    pb.update(cur_per)
-    pr2 = list()
-    for tag in tag[
-            (tag['chrom']==hidden[1]['chrom'])&(abs(tag['pos']-hidden[1]['pos'] < 100000))
-        ].icol(slice(2,None)).iterrows():
-        non_missing = (hidden_non_missing)&(tag[1] != -1)
-        if sum(non_missing) == 0:
-            print("Whoa!")
-        else:
-            pr2.append(
-                scipy.stats.pearsonr(
-                    tag[1][non_missing].values.astype('float'),
-                    hidden[1][2:][non_missing].values.astype('float')
-                )[0]
-            )
-    if any(np.array(pr2) > 0.8):
-        return True
-    else:
-        return False 
- 
+
+
+class FastTagger(object):
+    binpath = '/project/mccuelab/shared/bin/FastTaggerV2'
+    def __init__(self,binpath=None):
+        if binpath:
+            self.binpath = binpath
+
+    def parfile(self,maf,r2,basename):
+        with open(basename+'.par','w') as OUT:
+            print("\n".join(
+               'data_maf={}.maf'.format(basename),
+               'data_matrix={}.matrix'.format(basename),
+               'min_maf={}'.format(maf),
+               'window_len=100000',
+               'min_r2_1={}'.format(r2),
+               'min_r2_2={}'.format(r2),
+               'min_r2_3={}'.format(r2),
+               'max_len=3',
+               'max_merge_window_len=100000',
+               'min_bin_size=0',
+               'max_covered_times=0',
+               'mem_size=0',
+               'max_tagSNP_num=0.00',
+               'model=MMTagger',
+               'output=TagSet',
+            ),file=OUT)
+
+    def tag(self,vcffile,maf,r2,chrom=None):
+        vcf = VCF(vcffile)
+        # Create Output Dir
+        base = os.path.join("MAF_{}_r2_{}") 
+        os.makedirs(base,exist_ok=True)
+        # filter down chromosomes
+        for chrom in vcf.iter_chroms():
+            # make an output for that chrom
+            output = os.path.join(base,chrom)
+            os.makedirs(output,exist_ok=True)
+            if not os.path.exists(os.path.join(output,'{}_{}'.format(chrom,vcf.vcffile.name))):
+                p = Popen([
+                    
+                ])
+                
+            
+        # output fasttagger input files
+        # Run Fast Tagger
+        # process output to create tag snp files
+         
+
 class TagSet(VCF):
     ''' This class is for a special subset of SNPs within a VCF, namely tSNPs.
         It contains methods specific to tag SNPs and doing fun things with them
@@ -573,26 +688,36 @@ class TagSet(VCF):
     def __init__(self,vcffile,force=False):
         super().__init__(vcffile,force=force)
 
-    def effectiveness(self,VCF,r2_cutoff=0.8,max_distance=100000):
-        # Extract common sample indices
-        sample_intersection = list(set(self.samples).intersection(VCF.samples))
-        # Load genotype tables:
-        self._load_genos()
-        VCF._load_genos()
-        tags = self.genotypes[['chrom','pos']+sample_intersection]
-        hidden = VCF.genotypes[['chrom','pos']+sample_intersection]
-        total = len(hidden)
-        data = [(hid,tags,r2_cutoff,max_distance,pd,i,total) for i,hid in enumerate(hidden.iterrows())]
-        # start computing pairwise r2
-        pool = multiprocessing.Pool()
-        progress = progress_bar(multiprocessing.Manager())
-        hidden_snp_effectiveness = np.array(list(chain(
-            pool.imap(_Effectiveness, data)
-        )))
-        pool.close()
-        pool.join()
-        return sum(hidden_snp_effectiveness)/len(hidden_snp_effectiveness)
-    
+    def effectiveness(self,genor2_file):
+        # read in genor2 file
+        gr2 = pd.read_table(genor2_file)
+        gr2['POS1_is_Tag'] = [p in self.posmap[c] for c,p in gr2[['CHR','POS1']].itertuples(index=False) ]
+        gr2['POS2_is_Tag'] = [p in self.posmap[c] for c,p in gr2[['CHR','POS2']].itertuples(index=False) ]
+        # If one is a TAG SNP, it MUST be on the correct chromosome
+        len([x for x in set(itertools.chain(*gr2[(gr2['R^2'] >= 0.8) & (gr2.POS1_is_Tag ^ gr2.POS2_is_Tag)][['POS1','POS2']].values))])
+
+    def misclassification(self,imputedVCF,refVCF,call_thresh=0.45):
+        mis_frac = list()
+        for variant in imputedVCF.iter_variants():
+            # skip tag snps
+            if variant.pos in self.posmap[variant.chrom]:
+                continue
+            # Mask out missing values
+            ref_var = np.array(refVCF.pos(variant.chrom,variant.pos).genos(transform=Allele.vcf2geno))
+            ref_mask = ref_var != -1
+            # create a mask on genotypes which are below the call threshold
+            imp_var = np.array(variant.genos(transform=Allele.vcf2geno))
+            imp_mask = imp_var > call_thresh
+            mask = ref_mask & imp_mask
+            agreement = (imp_var[mask] == ref_var[mask])
+            if len(agreement) > 0:
+                mis_frac.append(
+                    sum(agreement)/len(agreement)
+                )
+        return np.array(mis_frac).mean()
+           
+
+ 
 class AxiomGenos(object):
     def __init__(self):
         self.samples = pd.DataFrame()
