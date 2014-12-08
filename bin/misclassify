@@ -2,7 +2,7 @@
 
 import sys
 from optparse import OptionParser
-from PonyTools.Tools import VCF,log
+from PonyTools.Tools import VCF,log,TagSet
 from subprocess import Popen,PIPE
 import os
 
@@ -22,8 +22,8 @@ def main(args):
     options,args = parser.parse_args(args)
     processes = []
     # filter imp set into tag set
+    log('Generating keep and ref sets' + '#'*50)
     if not os.path.exists('keep_'+os.path.basename(options.ids)+'.recode.vcf'):
-        log('Generating keep and ref sets' + '#'*50)
         p = Popen([
             'vcftools', 
             '--vcf', options.vcf,
@@ -57,10 +57,10 @@ def main(args):
         ])
         p.desc = 'vcftools: tags'
         processes.append(p)
-    wait(processes)
+        wait(processes)
     # phase the reference pops
-    if not os.path.exists('ref_phased_'+os.path.basename(options.ids)+'.recode.vcf.gz'):
-        log('Phasing reference set' + '#'*50)
+    log('Phasing reference set' + '#'*50)
+    if not os.path.exists('ref_phased_'+os.path.basename(options.ids)+'.recode.vcf'):
         p = Popen([
             'java', 
             '-jar', '/project/mccuelab/shared/bin/b4.r1274.jar',
@@ -69,15 +69,10 @@ def main(args):
         ])
         p.desc = 'ref phasing'
         processes.append(p)
-    wait(processes)
-    if not os.path.exists('ref_phased_'+os.path.basename(options.ids)+'.recode.vcf'):
-        log('unziping reference'+'#'*50)
-        p = Popen(['gunzip','ref_phased_'+os.path.basename(options.ids)+'.recode.vcf.gz'])
-        p.desc = 'unzipping ref'
-        processes.append(p)
         wait(processes)
-    if not os.path.exists('ref_imputed_'+os.path.basename(options.ids)+'.recode.vcf'):
-        log('Imputing Tags' + '#'*50)
+        unzip('ref_phased_'+os.path.basename(options.ids)+'.recode.vcf.gz',processes)
+    log('Imputing Tags' + '#'*50)
+    if not os.path.exists('imputed_'+os.path.basename(options.ids)+'.recode.vcf'):
         p = Popen([
             'java', 
             '-jar', '/project/mccuelab/shared/bin/b4.r1274.jar',
@@ -87,13 +82,12 @@ def main(args):
         ])
         p.desc = 'tag imputation'
         processes.append(p)
-    wait(processes)
-    if not os.path.exists('imputed_'+os.path.basename(options.ids)+'.recode.vcf'):
-        log('unziping reference'+'#'*50)
-        p = Popen(['gunzip','imputed_'+os.path.basename(options.ids)+'.recode.vcf.gz'])
-        p.desc = 'unzipping imputation'
-        processes.append(p)
         wait(processes)
+        unzip('imputed_'+os.path.basename(options.ids)+'.recode.vcf.gz',processes)
+
+    # Now do what you came here to do!
+    tags = TagSet('tags_'+os.path.basename(options.ids)+'.recode.vcf')
+    print(os.path.basename(options.ids),tags.misclassification(VCF("imputed_"+os.path.basename(options.ids)+".recode.vcf"),VCF("keep_"+os.path.basename(options.ids)+".recode.vcf")))
 
 
 def wait(processes):
@@ -103,6 +97,12 @@ def wait(processes):
             if p.poll() is not None:
                 print("Process {} ({}) ended with exit code {}".format(p.desc,p.pid,p.returncode))
                 processes.remove(p) 
+
+def unzip(file,processes):
+    p = Popen(['gunzip','-f',file])    
+    p.desc = 'unzipping'
+    processes.append(p)
+    wait(processes)
 
 
 if __name__ == '__main__':
