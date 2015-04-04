@@ -18,6 +18,7 @@ def main(args):
     parser.add_option('--vcf')
     parser.add_option('--ids',default=None)
     parser.add_option('--tags',default=None)
+    parser.add_option('--call_thresh',default=0.45,type='float')
     # parse options!
     options,args = parser.parse_args(args)
     processes = []
@@ -87,7 +88,13 @@ def main(args):
 
     # Now do what you came here to do!
     tags = TagSet('tags_'+os.path.basename(options.ids)+'.recode.vcf')
-    print(os.path.basename(options.ids),tags.misclassification(VCF("imputed_"+os.path.basename(options.ids)+".recode.vcf"),VCF("keep_"+os.path.basename(options.ids)+".recode.vcf")))
+    print(os.path.basename(options.ids),
+        tags.misclassification(
+            VCF("imputed_"+os.path.basename(options.ids)+".recode.vcf"),
+            VCF("keep_"+os.path.basename(options.ids)+".recode.vcf"),
+            call_thresh=options.call_thresh
+        )
+    )
 
 
 def wait(processes):

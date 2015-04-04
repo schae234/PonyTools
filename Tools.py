@@ -714,7 +714,7 @@ class TagSet(VCF):
                 mis_frac.append(
                     sum(agreement)/len(agreement)
                 )
-        return np.array(mis_frac).mean()
+        return (np.array(mis_frac).mean(),len(mis_frac),len(refVCF))
            
 
  
