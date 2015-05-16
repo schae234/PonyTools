@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+from collections import defaultdict
+import pandas as pd
+
 class VCF(object):
     def __init__(self,vcffile,force=False):
         self.vcffile = open(vcffile,'r')
