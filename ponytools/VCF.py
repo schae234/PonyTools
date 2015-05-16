@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
 
+import os
+import pickle
+
 from collections import defaultdict
+
+from ponytools.Tools import log
+
 import pandas as pd
+
 
 class VCF(object):
     def __init__(self,vcffile,force=False):
