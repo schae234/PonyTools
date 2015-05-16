@@ -1,0 +1,37 @@
+import argparse
+import os
+import sys
+
+from ponytools.VCF import VCF
+from collections import defaultdict
+
+def main(args):
+    
+    #Generate a VCF object
+    vcf = VCF(args.vcf)
+
+    ind_map = dict()
+    # Generate a dictionary of ids
+    for ind_file in args.inds:
+        # Extract basename
+        base = os.path.basename(ind_file)
+        group_name = os.path.splitext(base)[0]
+        ind_map[group_name] = {'id':list(),'index':list()}
+        with open(ind_file,'r') as IN:
+            for line in IN:
+                ind_id = line.strip()
+                ind_map[group_name]['id'].append(ind_id)
+                ind_map[group_name]['index'].append(vcf.sample2index(ind_id))
+
+    import ipdb;ipdb.set_trace()
+
+
+        
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Python implementation of DI script')
+    parser.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
+    parser.add_argument('--inds',action='append',help='Files containing individual IDs for groups in DI statistic. Can be specified more than once.')
+    args = parser.parse_args()
+    sys.exit(main(args))
