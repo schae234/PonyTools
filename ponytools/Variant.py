@@ -25,6 +25,10 @@ class Variant(object):
         else:
             return True
     @property
+    def chrom(self):
+        return self['chrom']
+
+    @property
     def pos(self):
         return int(self.__dict__['pos'])
     def __getitem__(self,item):

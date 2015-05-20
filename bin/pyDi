@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import os
 import sys
@@ -72,10 +74,10 @@ def main(args):
             else:
                 group_fst.append(np.nan)
         fst_table.append(group_fst)
-        snp_table.append([snp.id,snp.pos])
+        snp_table.append([snp.id,snp.chrom,snp.pos])
     # Create pandas tables from the snp and Fst tables
     fst_table = pd.DataFrame(fst_table,columns=group_combs)
-    snp_table = pd.DataFrame(snp_table,columns=['snp','pos'])
+    snp_table = pd.DataFrame(snp_table,columns=['snp','chrom','pos'])
 
     # Standard normalize the columns of the Fst table
     fst_table = fst_table.apply( lambda col : (col-col.mean())/col.std(), axis=1)
@@ -87,11 +89,14 @@ def main(args):
         # Sum the corrected Fst values for combinations in the group
         snp_table[group] = fst_table.ix[:,mask].sum(axis=1)
 
-    pdb.set_trace()
-            
+    windowed_di = snp_table.ix[:,['chrom','pos','window']+list(ind_map.keys())].groupby(['chrom','window']).agg(np.nanmean)
+
+    snp_table.to_csv(args.out+'_'+"_".join(ind_map.keys())+'_SNPWise_Di.tsv',sep='\t')    
+    windowed_di.to_csv(args.out+'_'+"_".join(ind_map.keys())+'_windowed_Di.tsv',sep='\t')    
 
 
-        
+    if args.debug:
+        import pdb; pdb.set_trace()
 
 if __name__ == '__main__':
 
@@ -100,5 +105,6 @@ if __name__ == '__main__':
     parser.add_argument('--inds',action='append',help='Files containing individual IDs for groups in DI statistic. Can be specified more than once.')
     parser.add_argument('--window-size',action='store',type=int,default=250000,help='Window size for averaging Di values')
     parser.add_argument('--debug', action='store_true', help='DEBUG mode. Only runs first 1k lines of vcf for speed')
+    parser.add_argument('--out', action='store', default='', type=str, help='Prepend output file names with this.')
     args = parser.parse_args()
     sys.exit(main(args))
