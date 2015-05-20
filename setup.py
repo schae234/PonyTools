@@ -4,9 +4,11 @@ from setuptools import setup, find_packages, Extension
 
 setup(
     name = 'ponytools',
-    version = '0.1.0',
+    version = '0.1.1',
     packages = find_packages(),
-    scripts = [],
+    scripts = [
+       'bin/pyDi'     
+    ],
 
     install_requires = [
         'matplotlib>=1.4.3',
