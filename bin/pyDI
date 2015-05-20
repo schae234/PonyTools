@@ -2,28 +2,93 @@ import argparse
 import os
 import sys
 
+import ipdb as pdb
+import pandas as pd
+import numpy as np
+
 from ponytools.VCF import VCF
 from collections import defaultdict
+from itertools import combinations as comb
+
+
+def Fst(alt_freq_i,alt_freq_j):
+    '''
+        Calculates Fst from alternate allele freqs
+    '''
+    if alt_freq_i == alt_freq_j == 1:
+        return 0
+    if alt_freq_i == alt_freq_j == 0:
+        return 0
+    ref_freq_i = 1 - alt_freq_i
+    ref_freq_j = 1 - alt_freq_j
+    # Calculate population heterozygosity
+    H_i = 2 * alt_freq_i * ref_freq_i
+    H_j = 2 * alt_freq_j * ref_freq_j
+    H_s = (H_i + H_j) / 2
+    # Calculate Average Allele Frequencies
+    avg_alt_freq = (alt_freq_i + alt_freq_j)/2
+    avg_ref_freq = (ref_freq_i + ref_freq_j)/2
+    H_t = 2 * avg_alt_freq * avg_ref_freq
+    # Return Fst
+    return (H_t - H_s)/(H_t)
+
 
 def main(args):
     
     #Generate a VCF object
     vcf = VCF(args.vcf)
-
-    ind_map = dict()
+    
+    ind_map = defaultdict(list)
     # Generate a dictionary of ids
     for ind_file in args.inds:
         # Extract basename
         base = os.path.basename(ind_file)
         group_name = os.path.splitext(base)[0]
-        ind_map[group_name] = {'id':list(),'index':list()}
+        # Read in ind files line by line and create dict
         with open(ind_file,'r') as IN:
             for line in IN:
                 ind_id = line.strip()
-                ind_map[group_name]['id'].append(ind_id)
-                ind_map[group_name]['index'].append(vcf.sample2index(ind_id))
+                ind_map[group_name].append(vcf.sample2index(ind_id))
+    # grab pairwise combinations of groups
+    group_combs = list(comb(ind_map.keys(),2))
 
-    import ipdb;ipdb.set_trace()
+    # Allocate a massive SNP x group_comb table
+    fst_table = list()
+    snp_table = list()
+    for i,snp in enumerate(vcf.iter_variants()):
+        if i % 100000 == 0:
+            print("On SNP {}".format(i))
+        if args.debug is True and i == 1000:
+                break
+        group_fst = list()
+        for group_i,group_j in group_combs:
+            # Get the group ids for convenience
+            ind_i = ind_map[group_i]
+            ind_j = ind_map[group_j]
+            alt_freq_i = snp.alt_freq(samples_i=ind_i)
+            alt_freq_j = snp.alt_freq(samples_i=ind_j)
+            if alt_freq_i is not None and alt_freq_j is not None:
+                group_fst.append(Fst(alt_freq_i,alt_freq_j))
+            else:
+                group_fst.append(np.nan)
+        fst_table.append(group_fst)
+        snp_table.append([snp.id,snp.pos])
+    # Create pandas tables from the snp and Fst tables
+    fst_table = pd.DataFrame(fst_table,columns=group_combs)
+    snp_table = pd.DataFrame(snp_table,columns=['snp','pos'])
+
+    # Standard normalize the columns of the Fst table
+    fst_table = fst_table.apply( lambda col : (col-col.mean())/col.std(), axis=1)
+    # Add windows to the snp table
+    snp_table['window'] = snp_table.pos // args.window_size
+
+    for group in ind_map.keys():
+        mask = [group in comb for comb in group_combs]
+        # Sum the corrected Fst values for combinations in the group
+        snp_table[group] = fst_table.ix[:,mask].sum(axis=1)
+
+    pdb.set_trace()
+            
 
 
         
@@ -33,5 +98,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Python implementation of DI script')
     parser.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
     parser.add_argument('--inds',action='append',help='Files containing individual IDs for groups in DI statistic. Can be specified more than once.')
+    parser.add_argument('--window-size',action='store',type=int,default=250000,help='Window size for averaging Di values')
+    parser.add_argument('--debug', action='store_true', help='DEBUG mode. Only runs first 1k lines of vcf for speed')
     args = parser.parse_args()
     sys.exit(main(args))

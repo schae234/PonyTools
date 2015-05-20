@@ -41,7 +41,47 @@ class Variant(object):
         return "\n".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
                     self.alt, self.qual, self.filter, self.info, 
                     self.format ]+ self.genotypes))
-    def genos(self,samples_i=None,format_field='GT',transform=None):
+
+    def alt_freq(self,samples_i=None,max_missing=0.3):
+        '''
+            Computes the ALTERNATE allele frequency.
+
+            Parameters
+            ----------
+            samples_i : str iterable (individual ids)
+                If not None, will compute MAF for subset of individuals.
+
+        '''
+        genos = self.genos()
+        if samples_i is not None:
+            genos = [genos[x] for x in samples_i]
+        num_mis = sum([x.count('.') for x in genos])
+        if (num_mis / (2*len(genos))) > max_missing:
+            return None
+        num_ref = sum([x.count('0') for x in genos])
+        num_alt = sum([x.count('1') for x in genos])
+        n = (2*len(genos)) - num_mis
+        return num_alt/n
+
+    def heterozygosity(self,samples_i=None,max_missing=0.3):
+        '''
+            Compute the heterozygositey of the SNP
+            for indivduials indices in samples_i
+
+            parameters
+            ----------
+            samples_i : int iterable (individual ids)
+                If not None, will computer heterozygosity for 
+                subset of individuals
+        '''
+        alt_freq = self.alt_freq(samples_i=samples_i,max_missing=max_missing)
+        if alt_freq is None:
+            return None
+        ref_freq = 1 - alt_freq
+        return 2 * alt_freq * ref_freq
+
+
+    def genos(self,samples_i=None,samples_id=None,format_field='GT',transform=None):
         ''' return alleles *in order* for samples '''
         if not transform:
             transform = lambda x:x
@@ -50,6 +90,7 @@ class Variant(object):
             return [ transform(self.genotypes[sample_i].split(':')[gt_index]) for sample_i in samples_i]
         else:
             return [transform(geno.split(':')[gt_index]) for geno in self.genotypes]
+
     def r2(self,variant,samples_i,samples_j):
         ''' returns the r2 value with another variant '''
         # find common individuals

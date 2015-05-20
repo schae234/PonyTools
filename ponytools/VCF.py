@@ -6,6 +6,7 @@ import pickle
 from collections import defaultdict
 
 from ponytools.Tools import log
+from ponytools.Variant import Variant
 
 import pandas as pd
 
@@ -55,6 +56,7 @@ class VCF(object):
         ''' returns variant generator, for iteration. Should be memory efficient '''
         self.vcffile.seek(0)
         return (Variant(line) for line in self.vcffile if not line.startswith('#'))
+
     def iter_chroms(self):
         return (chrom for chroms in self.posmap.keys())
 
