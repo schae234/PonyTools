@@ -24,6 +24,7 @@ class Variant(object):
             return False
         else:
             return True
+
     @property
     def chrom(self):
         return self['chrom']

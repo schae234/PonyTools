@@ -4,7 +4,7 @@ from setuptools import setup, find_packages, Extension
 
 setup(
     name = 'ponytools',
-    version = '0.1.3',
+    version = '0.1.6',
     packages = find_packages(),
     scripts = [
        'bin/pyDi'     
@@ -15,6 +15,7 @@ setup(
         'numpy>=1.9.1',
         'pandas>=0.16',
         'scipy>=0.15',
+        'ipdb>=0.8'
     ],
 
     author = 'Rob Schaefer',
