@@ -10,30 +10,10 @@ import numpy as np
 import logging
 
 from ponytools.VCF import VCF
+from ponytools.Variant import Fst
 from collections import defaultdict
 from itertools import combinations as comb
 
-
-def Fst(alt_freq_i,alt_freq_j):
-    '''
-        Calculates Fst from alternate allele freqs
-    '''
-    if alt_freq_i == alt_freq_j == 1:
-        return 0
-    if alt_freq_i == alt_freq_j == 0:
-        return 0
-    ref_freq_i = 1 - alt_freq_i
-    ref_freq_j = 1 - alt_freq_j
-    # Calculate population heterozygosity
-    H_i = 2 * alt_freq_i * ref_freq_i
-    H_j = 2 * alt_freq_j * ref_freq_j
-    H_s = (H_i + H_j) / 2
-    # Calculate Average Allele Frequencies
-    avg_alt_freq = (alt_freq_i + alt_freq_j)/2
-    avg_ref_freq = (ref_freq_i + ref_freq_j)/2
-    H_t = 2 * avg_alt_freq * avg_ref_freq
-    # Return Fst
-    return (H_t - H_s)/(H_t)
 
 
 def main(args):
@@ -49,6 +29,9 @@ def main(args):
     handler.setFormatter(formatter)
     log.addHandler(handler)
     log.setLevel(logging.INFO)
+
+    if args.debug is True:
+        log.setLevel(logging.DEBUG)
 
     
     ind_map = defaultdict(list)
@@ -91,7 +74,11 @@ def main(args):
     snp_table = pd.DataFrame(snp_table,columns=['snp','chrom','pos'])
 
     # Standard normalize the columns of the Fst table
-    fst_table = fst_table.apply( lambda col : (col-col.mean())/col.std(), axis=1)
+    log.debug('Raw Fst:\n{}'.format(fst_table))
+    log.debug("Column means:\n{}".format(fst_table.mean()))
+    log.debug("Column stdev:\n{}".format(fst_table.std()))
+    # Normalize over COLUMNS!!!! (axis is 0)
+    fst_table = fst_table.apply( lambda col : (col-col.mean())/col.std(), axis=0)
     # Add windows to the snp table
     log.info("Creating windows that are {} bp large".format(args.window_size))
     snp_table['window'] = snp_table.pos // args.window_size
