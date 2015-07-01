@@ -1,3 +1,6 @@
+
+from ponytools.Exceptions import TriAllelicError
+
 class Variant(object):
     genomap = { # shared genomap
         './.' : -1, '0/0' : 0, '0/1' : 1, '1/0' : 1, '1/1' : 2,
@@ -31,6 +34,7 @@ class Variant(object):
     @property
     def pos(self):
         return int(self.__dict__['pos'])
+
     def __getitem__(self,item):
         try:
             return self.__dict__[item]
@@ -41,10 +45,19 @@ class Variant(object):
         except Exception as e:
             pass
         raise Exception("Value not found")
+
     def __repr__(self):
-        return "\n".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
+        return " ".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
                     self.alt, self.qual, self.filter, self.info, 
-                    self.format ]+ self.genotypes))
+                    self.format ]+ self.genotypes[0:5] ))
+
+    def __str__(self):
+        '''
+            returns a string of variant suitable for VCF printing
+        '''
+        return "\t".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
+                    self.alt, self.qual, self.filter, self.info, 
+                    self.format ]+ self.genotypes ))
 
     def alt_freq(self,samples_i=None,max_missing=0.3):
         '''
@@ -109,5 +122,66 @@ class Variant(object):
             return np.inf
         else:
             return abs(int(self.pos) - int(variant.pos))
+
+
+
+    def conform(self,reference_genotype,GT_index=0):
+        '''
+            Conforms a variant to a reference genotype.
+            This happens IN PLACE.
+
+            Parameters
+            ----------
+            reference_genotype: str
+                must be current alt or ref genotype. This
+                becomes the new reference.
+
+        '''
+        if self.alt == self.ref and self.ref != reference_genotype:
+            # Sometimes PLINK will assign both the alt and reference
+            # to the same thing, just make everyone alternate
+            self.ref = reference_genotype
+            # Make the translation table
+            trans = str.maketrans(
+                {'0':'1',
+                 '1':'1'}
+            )
+            def conform_genotype(genotype):
+                # split out the GT 
+                fields = genotype.split(':')
+                fields[GT_index] = str.translate(fields[GT_index],trans)
+                return ':'.join(fields)
+            self.genotypes = [conform_genotype(g) for g in self.genotypes]
+
+        elif reference_genotype not in (self.alt,self.ref):
+            raise TriAllelicError((
+                'Cannot conform to genotype that is not one of'
+                'the reference or alt {} != ({},{})'.format(
+                    reference_genotype,
+                    self.ref,
+                    self.alt
+                )
+            ))
+        elif not self.biallelic:
+            raise TriAllelicError('cannot conform triallelic SNP: {}'.format(self.id))
+        elif self.ref == reference_genotype:
+            return
+        else:
+            # Conform
+            self.alt,self.ref = self.ref,self.alt
+            # Make the translation table
+            trans = str.maketrans(
+                {'0':'1',
+                 '1':'0'}
+            )
+            def conform_genotype(genotype):
+                # split out the GT 
+                fields = genotype.split(':')
+                fields[GT_index] = str.translate(fields[GT_index],trans)
+                return ':'.join(fields)
+            self.genotypes = [conform_genotype(g) for g in self.genotypes]
+            
+            
+             
         
  

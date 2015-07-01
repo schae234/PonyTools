@@ -1,4 +1,4 @@
-class AxiomGenos(object):
+class AxiomGeno(object):
     def __init__(self):
         self.samples = pd.DataFrame()
         self.CELMap = {}

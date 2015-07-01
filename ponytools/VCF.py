@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from ponytools.Tools import log
 from ponytools.Variant import Variant
+from ponytools.Allele import Allele
 
 import pandas as pd
 
@@ -22,9 +23,35 @@ class VCF(object):
         # Keep track of samples
         self.samples = []
         # experimental genotype data frame
-        self.genotypes = pd.DataFrame()
+        self._genotypes = pd.DataFrame()
         # load/create indices
         self.index(force=force)
+
+    @property
+    def genotypes(self):
+        if len(self._genotypes) == 0:
+            self._load_genos()
+        return self._genotypes
+
+    def _load_genos(self):
+        if not self._genotypes.empty:
+            return
+        log("Lazy loading genotypes for {}",self.vcffile.name)
+        
+        alleles = []
+        ids = []
+        for variant in self.iter_variants():  # We only support bi-allelic SNPS right now!!!!
+            if not variant.biallelic:
+                continue
+            alleles.append(variant.genos(transform = Allele.vcf2geno))
+            ids.append((variant.id,variant.chrom,variant.pos))
+        self._genotypes = pd.DataFrame(
+                alleles,
+                index=pd.MultiIndex.from_tuples(ids,names=['id','chrom','pos']),
+                columns=self.samples
+        )
+ 
+
     def index(self,force=False):
         if not os.path.exists(self.vcffile.name+'.pdx') or force:
             # create the index file
@@ -47,10 +74,14 @@ class VCF(object):
                 cur_byte += len(line)
             self.vcffile.seek(0)
             # pickle index file for later use
-            pickle.dump((self.idmap,self.posmap,self.samples,self.indexmap),open(self.vcffile.name+".pdx",'wb'))
+            pickle.dump((self.header,self.idmap,self.posmap,self.samples,self.indexmap),open(self.vcffile.name+".pdx",'wb'))
         else:
             # read the index file
-            self.idmap,self.posmap,self.samples,self.indexmap = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
+            self.header,self.idmap,self.posmap,self.samples,self.indexmap = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
+
+    @property
+    def sample_line(self):
+        return '\t'.join(['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']+self.samples)
 
     def iter_variants(self):
         ''' returns variant generator, for iteration. Should be memory efficient '''
@@ -60,19 +91,7 @@ class VCF(object):
     def iter_chroms(self):
         return (chrom for chroms in self.posmap.keys())
 
-    def _load_genos(self):
-        if not self.genotypes.empty:
-            return
-        log("Loading genos for {}",self.vcffile.name)
-        alleles = []
-        ids = []
-        for variant in self.iter_variants():  # We only support bi-allelic SNPS right now!!!!
-            if not variant.biallelic:
-                continue
-            alleles.append([variant.chrom,variant.pos] + variant.genos(transform = Allele.vcf2geno))
-            ids.append(variant.id)
-        self.genotypes = pd.DataFrame(alleles,index=ids,columns=['chrom','pos']+self.samples)
-    
+   
     def sample_call_rate(self):
         ''' returns call rate for samples '''
         pass
@@ -128,6 +147,7 @@ class VCF(object):
         with open(filename,'w') as OUT:
             for sample in self.samples:
                 print("{}\t{}\t0\t0\t0\t0".format(fam_id,sample),file=OUT) 
+
 
     def to_fastTagger(self,prefix=None,maf=0.01,r2=0.99):
         '''outputs to fastTAGGER format. will split by chromosome'''
@@ -199,7 +219,7 @@ class VCF(object):
             # load the genotype data
             self._load_genos()
             # Sort by position
-            self.genotypes = self.genotypes.sort('pos',ascending=True)
+            self._genotypes = self._genotypes.sort('pos',ascending=True)
             # print location to pos file
             print(len(self.genotypes),"\n".join(map(str,self.genotypes['pos'])),file=POS)
             # print the SNP names 
@@ -258,5 +278,41 @@ class VCF(object):
                 if int(n) > 2: # only biallelic
                     continue
                 print("{}\t{}".format(self.pos(chrom,pos).id,min(freqs)),file=OUT)
+
+class TagSet(VCF):
+    ''' This class is for a special subset of SNPs within a VCF, namely tSNPs.
+        It contains methods specific to tag SNPs and doing fun things with them
+        such as '''
+    def __init__(self,vcffile,force=False):
+        super().__init__(vcffile,force=force)
+
+    def effectiveness(self,genor2_file):
+        # read in genor2 file
+        gr2 = pd.read_table(genor2_file)
+        gr2['POS1_is_Tag'] = [p in self.posmap[c] for c,p in gr2[['CHR','POS1']].itertuples(index=False) ]
+        gr2['POS2_is_Tag'] = [p in self.posmap[c] for c,p in gr2[['CHR','POS2']].itertuples(index=False) ]
+        # If one is a TAG SNP, it MUST be on the correct chromosome
+        len([x for x in set(itertools.chain(*gr2[(gr2['R^2'] >= 0.8) & (gr2.POS1_is_Tag ^ gr2.POS2_is_Tag)][['POS1','POS2']].values))])
+
+    def misclassification(self,imputedVCF,refVCF,call_thresh=0.45):
+        mis_frac = list()
+        for variant in imputedVCF.iter_variants():
+            # skip tag snps
+            if variant.pos in self.posmap[variant.chrom]:
+                continue
+            # Mask out missing values
+            ref_var = np.array(refVCF.pos(variant.chrom,variant.pos).genos(transform=Allele.vcf2geno))
+            ref_mask = ref_var != -1
+            # create a mask on genotypes which are below the call threshold
+            imp_var = np.array(variant.genos(transform=Allele.vcf2geno))
+            imp_mask = imp_var > call_thresh
+            mask = ref_mask & imp_mask
+            agreement = (imp_var[mask] == ref_var[mask])
+            if len(agreement) > 0:
+                mis_frac.append(
+                    sum(agreement)/len(agreement)
+                )
+        return (np.array(mis_frac).mean(),len(mis_frac),len(refVCF))
+           
 
 

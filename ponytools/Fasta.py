@@ -1,3 +1,6 @@
+from collections import defaultdict
+from ponytools.Tools import chromosome, log
+
 class Fasta(object):
     def __init__(self):
         self.added_order = []
