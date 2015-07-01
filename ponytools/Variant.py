@@ -1,5 +1,25 @@
 
 from ponytools.Exceptions import TriAllelicError
+def Fst(alt_freq_i,alt_freq_j):
+    '''
+        Calculates Fst from alternate allele freqs
+    '''
+    if alt_freq_i == alt_freq_j == 1:
+        return 0
+    if alt_freq_i == alt_freq_j == 0:
+        return 0
+    ref_freq_i = 1 - alt_freq_i
+    ref_freq_j = 1 - alt_freq_j
+    # Calculate population heterozygosity
+    H_i = 2 * alt_freq_i * ref_freq_i
+    H_j = 2 * alt_freq_j * ref_freq_j
+    H_s = (H_i + H_j) / 2
+    # Calculate Average Allele Frequencies
+    avg_alt_freq = (alt_freq_i + alt_freq_j)/2
+    avg_ref_freq = (ref_freq_i + ref_freq_j)/2
+    H_t = 2 * avg_alt_freq * avg_ref_freq
+    # Return Fst
+    return (H_t - H_s)/(H_t)
 
 class Variant(object):
     genomap = { # shared genomap
@@ -27,6 +47,7 @@ class Variant(object):
             return False
         else:
             return True
+
     @property
     def chrom(self):
         return self['chrom']
