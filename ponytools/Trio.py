@@ -32,5 +32,3 @@ class Trio(object):
         else:
             consistent = False
         return consistent
-
-
