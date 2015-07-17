@@ -24,4 +24,21 @@ class Allele(object):
             1  :'1/0',
             2  :'1/1',
         }[allele_code]
- 
+
+    @staticmethod
+    def vcf2allele(ref,alt):
+        def closure(allele_code):
+            return {
+                './.' : '--',
+                '0/0' : '{}{}'.format(ref,ref),
+                '0/1' : '{}{}'.format(alt,ref),
+                '1/0' : '{}{}'.format(alt,ref),
+                '1/1' : '{}{}'.format(alt,alt),
+                '2/2' : -1,
+                '0/2' : -1,
+                '2/0' : -1,
+                '1/2' : -1,
+                '2/1' : -1
+            }[allele_code.replace('|','/')]
+        return closure
+
