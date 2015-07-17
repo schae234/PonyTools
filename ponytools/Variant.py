@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 
-from ponytools.Exceptions import TriAllelicError
+from .Exceptions import TriAllelicError
+
 def Fst(alt_freq_i,alt_freq_j):
     '''
         Calculates Fst from alternate allele freqs
@@ -27,19 +29,62 @@ class Variant(object):
         -1 : -1, 0 : 0, 1 : 1, 2 : 2,
         '.|.' : -1, '0|0' : 0, '0|1' : 1, '1|0' : 1, '1|1' : 2,
     }
-    def __init__(self,string):
-        # make this lightweight since we are going to be using a  these
-        fields = string.strip().split()
-        self.__dict__.update(zip(['chrom','pos','id','ref','alt','qual','filter','info','format'],fields[0:9]))
-        self.genotypes = fields[9:]
+ 
+    def __init__(self, chrom, pos, id, ref, alt, qual='.', fltr='PASS', info='.', fmt='GT:GQ', genos=None):
+        '''
+        A fairly lightweight representation of a VCF compatible variant.        
+            
+        Parameters
+        ----------
+        chrom, pos, id, ref, alt, qual, filter, info, format, *genotypes
+        
+        Returns
+        -------
+        Variant instance    
+        '''
+        self.chrom = str(chrom)
+        self.pos = int(pos)
+        self.id = str(id)
+        self.ref = str(ref)
+        self.alt = str(alt)
+        if qual != '.':
+            self.qual = float(qual)
+        else:
+            self.qual = qual
+        self.fltr = str(fltr)
+        self.info = str(info)
+        self.fmt = str(fmt)
+        self.genos = genos
 
+    @classmethod
+    def from_str(cls,string):
+        chrom,pos,id,ref,alt,qual,fltr,info,fmt,*genotypes = string.strip().split()
+        self = cls(chrom,pos,id,ref,alt,qual,fltr,info,fmt,genos=genotypes)
+        return self
+    
+    @classmethod
+    def from_dict(cls,dict):
+        chrom = dict['chrom']
+        pos = int(dict['pos'])
+        id = dict['id']
+        ref = dict['ref']
+        alt = dict['alt']
+        qual = dict['qual']
+        fltr = dict['fltr']
+        info = dict['info']
+        fmt = dict['fmt']
+        genos = dict['genos']
+        self = cls(chrom,pos,id,ref,alt,qual,fltr,info,fmt,genos=genos)
+        return self
+       
     @property
     def phased(self):
         ''' return bool on phase state '''
-        if '|' in self.genotypes[0]:
+        if '|' in self.genos[0]:
             return True
         else:
             return False
+
     @property
     def biallelic(self):
         ''' return bool true if variant is biallelic '''
@@ -47,14 +92,23 @@ class Variant(object):
             return False
         else:
             return True
-
-    @property
-    def chrom(self):
-        return self['chrom']
-
-    @property
-    def pos(self):
-        return int(self.__dict__['pos'])
+    
+    def add_info(self,key,val):
+        '''
+        Add to the INFO field 
+            
+        Parameters
+        ----------
+        key:str
+            The key of the info item
+        val:str
+            The value of the info item
+                
+        Returns
+        -------
+            None
+        '''
+        self.info += ";{}={}".format(key,val)
 
     def __getitem__(self,item):
         try:
@@ -63,22 +117,36 @@ class Variant(object):
             pass
         try:
             return self.genos[item]
-        except Exception as e:
+        except KeyError as e:
             pass
         raise Exception("Value not found")
 
     def __repr__(self):
-        return " ".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
-                    self.alt, self.qual, self.filter, self.info, 
-                    self.format ]+ self.genotypes[0:5] ))
+        return "<PonyTools Variant at: {} {}>".format(self.chrom,self.pos)
 
     def __str__(self):
         '''
             returns a string of variant suitable for VCF printing
         '''
         return "\t".join(map(str,[self.chrom, self.pos, self.id, self.ref, 
-                    self.alt, self.qual, self.filter, self.info, 
-                    self.format ]+ self.genotypes ))
+                    self.alt, self.qual, self.fltr, self.info, 
+                    self.fmt ]+ self.genos ))
+
+    def __eq__(self,var):
+        if (self.chrom == var.chrom
+            and self.pos == var.pos
+            and self.id == var.id
+            and self.ref == var.ref
+            and self.alt == var.alt
+            and self.qual == var.qual
+            and self.fltr == var.fltr
+            and self.info == var.info
+            and self.fmt == var.fmt
+            and self.genos == var.genos):
+            return True
+        else:  
+            return False
+
 
     def alt_freq(self,samples_i=None,max_missing=0.3):
         '''
@@ -119,15 +187,17 @@ class Variant(object):
         return 2 * alt_freq * ref_freq
 
 
-    def genos(self,samples_i=None,samples_id=None,format_field='GT',transform=None):
+    def alleles(self,samples_i=None,samples_id=None,format_field='GT',transform=None):
         ''' return alleles *in order* for samples '''
         if not transform:
             transform = lambda x:x
-        gt_index = self.format.split(":").index(format_field)
+        if transform.__name__ == 'vcf2allele':
+            transform = transform(self.ref,self.alt)
+        gt_index = self.fmt.split(":").index(format_field)
         if samples_i:
-            return [ transform(self.genotypes[sample_i].split(':')[gt_index]) for sample_i in samples_i]
+            return [ transform(self.genos[sample_i].split(':')[gt_index]) for sample_i in samples_i]
         else:
-            return [transform(geno.split(':')[gt_index]) for geno in self.genotypes]
+            return [transform(geno.split(':')[gt_index]) for geno in self.genos]
 
     def r2(self,variant,samples_i,samples_j):
         ''' returns the r2 value with another variant '''
@@ -143,19 +213,27 @@ class Variant(object):
             return np.inf
         else:
             return abs(int(self.pos) - int(variant.pos))
+    @property
+    def is_polymorphic(self):
+        if self.ref in ('A','C','G','T') and self.alt in ('A','C','G','T'):
+            return True
+        else:
+            return False
 
 
-
-    def conform(self,reference_genotype,GT_index=0):
+    def conform(self,reference_genotype,GT_index=0,inplace=False):
         '''
             Conforms a variant to a reference genotype.
-            This happens IN PLACE.
 
             Parameters
             ----------
             reference_genotype: str
                 must be current alt or ref genotype. This
                 becomes the new reference.
+
+            Notes
+            -----
+            This happens IN PLACE.
 
         '''
         if self.alt == self.ref and self.ref != reference_genotype:
@@ -172,7 +250,7 @@ class Variant(object):
                 fields = genotype.split(':')
                 fields[GT_index] = str.translate(fields[GT_index],trans)
                 return ':'.join(fields)
-            self.genotypes = [conform_genotype(g) for g in self.genotypes]
+            self.genos = [conform_genotype(g) for g in self.genos]
 
         elif reference_genotype not in (self.alt,self.ref):
             raise TriAllelicError((
@@ -186,7 +264,7 @@ class Variant(object):
         elif not self.biallelic:
             raise TriAllelicError('cannot conform triallelic SNP: {}'.format(self.id))
         elif self.ref == reference_genotype:
-            return
+            return self
         else:
             # Conform
             self.alt,self.ref = self.ref,self.alt
@@ -200,9 +278,7 @@ class Variant(object):
                 fields = genotype.split(':')
                 fields[GT_index] = str.translate(fields[GT_index],trans)
                 return ':'.join(fields)
-            self.genotypes = [conform_genotype(g) for g in self.genotypes]
-            
-            
-             
-        
- 
+            self.genos = [conform_genotype(g) for g in self.genos]
+        return self            
+           
+
