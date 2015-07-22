@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-from .Exceptions import TriAllelicError
+import numpy as np
+
+from .Exceptions import TriAllelicError,InfoKeyError
 
 def Fst(alt_freq_i,alt_freq_j):
     '''
@@ -86,7 +88,7 @@ class Variant(object):
             return False
 
     @property
-    def biallelic(self):
+    def is_biallelic(self):
         ''' return bool true if variant is biallelic '''
         if ',' in self.alt:
             return False
@@ -108,7 +110,42 @@ class Variant(object):
         -------
             None
         '''
-        self.info += ";{}={}".format(key,val)
+        if self.info == '.' or self.info is None:
+            self.info = "{}={}".format(key,val)
+        else:
+            self.info += ";{}={}".format(key,val)
+
+    def get_info(self,key):
+        '''
+        Returns the value of a key in the INFO field,
+        if key is not in the info field, an InfoKeyError
+        exception is raised. 
+            
+        Parameters
+        ----------
+        key : str
+            The key of the item wanted in the INFO field
+                
+        Returns
+        -------
+        the value for key from INFO field
+        '''
+        # Handle when INFO field is blank
+        if self.info == '.' or self.info is None:
+            raise InfoKeyError('Nothing in INFO field')
+   
+        info_dict = dict()
+        for x in map(lambda x: x.split('='),self.info.split(';')):
+            if len(x) == 1:
+                info_dict[x[0]] = 1
+            else:
+                info_dict[x[0]] = x[1]
+        
+        try:
+            return info_dict[key]
+        except KeyError as e:
+            raise InfoKeyError('{} not in INFO field for {}'.format(key,self.id)) 
+
 
     def __getitem__(self,item):
         try:
@@ -158,7 +195,7 @@ class Variant(object):
                 If not None, will compute MAF for subset of individuals.
 
         '''
-        genos = self.genos()
+        genos = self.alleles()
         if samples_i is not None:
             genos = [genos[x] for x in samples_i]
         num_mis = sum([x.count('.') for x in genos])
@@ -168,6 +205,24 @@ class Variant(object):
         num_alt = sum([x.count('1') for x in genos])
         n = (2*len(genos)) - num_mis
         return num_alt/n
+
+    def call_rate(self,samples_i=None):
+        '''
+            Computes the SNP Call Rate.
+
+            Parameters
+            ----------
+            samples_i : str iterable (individual ids)
+                If not None, will compute Call Rate for subset of individuals.
+
+        '''
+        genos = self.alleles()
+        if samples_i is not None:
+            genos = [genos[x] for x in samples_i]
+        num_mis = sum([x.count('.') for x in genos])
+        n = (2*len(genos))
+        return 1-(num_mis/n)
+
 
     def heterozygosity(self,samples_i=None,max_missing=0.3):
         '''
@@ -261,7 +316,7 @@ class Variant(object):
                     self.alt
                 )
             ))
-        elif not self.biallelic:
+        elif not self.is_biallelic:
             raise TriAllelicError('cannot conform triallelic SNP: {}'.format(self.id))
         elif self.ref == reference_genotype:
             return self
