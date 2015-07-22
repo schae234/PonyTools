@@ -12,9 +12,7 @@ setup(
 
     install_requires = [
         'matplotlib>=1.4.3',
-        'numpy>=1.9.1',
         'pandas>=0.16',
-        'scipy>=0.15',
         'ipdb>=0.8'
     ],
 
