@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import pandas as pc
 
-from collections import defaultdict
+from collections import defaultdict,OrderedDict
 
 from .Tools import log
 from .Variant import Variant
@@ -13,11 +13,28 @@ from .Allele import Allele
 
 import pandas as pd
 
+class VCFHeader(OrderedDict):
+    def __init__(self):
+        super().__init__()
+
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError:
+            self[key] = list()
+            return self[key]
+
+    def __reduce__(self):
+        ''' Reduce is needed to pickle '''
+        return type(self),tuple()
+
+
+        
 
 class VCF(object):
     def __init__(self,vcffile,force=False):
         self.vcffile = open(vcffile,'r')
-        self.header = defaultdict(list)
+        self.header = VCFHeader()
         # keep track of a bunch of indexes
         self.idmap = {}
         self.posmap = defaultdict(dict)
@@ -28,6 +45,10 @@ class VCF(object):
         self._genotypes = None
         # load/create indices
         self.index(force=force)
+
+    @property
+    def header_string(self):
+       return '\n'.join(['#{}={}'.format(key,val) for key,vals in self.header.items() for val in vals]) 
 
     @property
     def genotypes(self):
@@ -52,7 +73,7 @@ class VCF(object):
         alleles = []
         ids = []
         for variant in self.iter_variants():  # We only support bi-allelic SNPS right now!!!!
-            if not variant.biallelic:
+            if not variant.is_biallelic:
                 continue
             alleles.append(variant.alleles(transform=transform))
             ids.append((variant.chrom,variant.pos,variant.id,variant.ref,variant.alt))
@@ -69,6 +90,7 @@ class VCF(object):
             ):
             # create the index file
             log('Index file does not exist for {}, indexing now'.format(self.vcffile.name))
+
             cur_byte = 0
             self.vcffile.seek(0)
             for line in self.vcffile:
@@ -273,21 +295,39 @@ class VCF(object):
         '''
         # iterate through the 
         common_samples = set(self.samples).intersection(vcf.samples)
-
+        if len(common_samples) == 0:
+            raise ValueError('No common samples between datasets.')
+        log('Generating loci lists')
         left_loci = [(chrom,pos) for chrom in self.posmap for pos in self.posmap[chrom]]
         right_loci = [(chrom,pos) for chrom in vcf.posmap for pos in vcf.posmap[chrom]]
         common_loci = set(left_loci).intersection(
             right_loci
         )
-        left_vars = [self.pos(chrom,pos) for chrom,pos in common_loci]
+
         # Right now does not handle multiple variants at a position
+        log('Extracting "left-side" variant calls (n={})',len(left_loci))
         left_vars = [self.pos(chrom,pos) for chrom,pos in common_loci]
-        right_vars = [vcf.pos(v.chrom,v.pos).conform(v.ref) for v in left_vars]
+        left_vars = sorted(left_vars, key=lambda x:vcf.posmap[x.chrom][x.pos])
+        log('Extracting "right-side" variant calls (n={})',len(left_loci))
+        right_vars = [vcf.pos(v.chrom,v.pos) for v in left_vars]
+        # filter out triallelic and non-polymorphic
+        log('Filtering out tri-allelic and non-polymorphic SNPs (n={})',len(left_vars))
+        left_vars,right_vars = zip(*[ (l,r.conform(l.ref)) for l,r in zip(left_vars,right_vars) if l.is_biallelic and l.is_polymorphic and r.is_biallelic and r.is_polymorphic])
+
+        log('Checking shapes (n={})',len(left_vars))
+        # Assert the fuck out of this
+        assert len(left_vars) == len(right_vars),\
+                "Variant lists not the same length"
+
         assert all(np.array([x.ref for x in left_vars]) == np.array([x.ref for x in right_vars])),\
                 "VCFs are not conformed correctly"
     
+        common_loci = [(x.chrom,x.pos) for x in left_vars]
+
         left_sample_i = [self.sample2index(x) for x in common_samples]
         right_sample_i = [vcf.sample2index(x) for x in common_samples]
+
+        log('Loading genotypes (n={} loci)',len(common_loci))
         # finally load genos
         left_genos = pd.DataFrame(
             [x.alleles(samples_i=left_sample_i,transform=Allele.vcf2geno) for x in left_vars],
@@ -302,7 +342,6 @@ class VCF(object):
         )
         right_genos[right_genos == -1] = np.nan
 
-
         results = [('sample','concordance','opp_hom_per','het_per','n')]
         for sample in common_samples:
             # extract nan masks
@@ -315,7 +354,6 @@ class VCF(object):
             het_percent = sum(abs(left_genos[sample][nan_mask] - right_genos[sample][nan_mask]) == 1)/n
             results.append((sample,concordance_percent,opposite_hom_percent,het_percent,n))
         return results
-
         
     def check_trio(self,offspring,father,mother,return_raw=False):
         ''' this checks the consitency of trio data '''
@@ -323,7 +361,7 @@ class VCF(object):
         consistencies = []
         off_i,fat_i,mot_i = [self.sample2index(x) for x in [offspring,father,mother]]
         for variant in self.iter_variants():
-            if not variant.biallelic:
+            if not variant.is_biallelic:
                 continue
             off,fat,mot = variant.alleles([off_i,fat_i,mot_i])
             consistencies.append(Trio(off,fat,mot).consistent())
@@ -369,7 +407,7 @@ class VCF(object):
                     log("processing variant {}",i)
                 if not variant.phased:
                     raise Exception("VCF file must be phased: variant {}".format(variant.id))
-                if not variant.biallelic:
+                if not variant.is_biallelic:
                     continue
                 # figure out minor and major allele freq 
                 genos = list(chain.from_iterable([allele.split('|') for allele in variant.alleles()]))
@@ -439,7 +477,7 @@ class VCF(object):
                     log('Processing variant {}',i)
                 if not var.phased:
                     raise Exception("VCF file must be phased: variant {}".format(var.id))
-                if not var.biallelic:
+                if not var.is_biallelic:
                     continue
                 # Kaput
                 print("\t".join([var.id,"{}/{}".format(var.ref,var.alt),var.chrom,var.pos,'.','-','-','-','-','QC+'] + \
