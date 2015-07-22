@@ -106,7 +106,7 @@ class AxiomCalls(object):
                 '##FORMAT=<ID=GT,Number=1,Type=Integer,Description="Genotype">',
                 '##FORMAT=<ID=GQ,Number=1,Type=Float,Description="Genotype quality">',
                 '##INFO=<ID=MNEc,Number=0,Type=Flag,Description="Variant is a MNEc SNP">',
-                '##INFO=<ID=axiomprobe,Number=1,Type=String,Description="Axiom Probe id for variant">'
+                '##INFO=<ID=MNEcID,Number=1,Type=String,Description="An id the is actually useful">'
             ]),file=OUT)
             # print out chromosomes and their lengths
            
@@ -122,7 +122,7 @@ class AxiomCalls(object):
                 for i,(probeid,var) in enumerate(chrom_vars.iterrows()):
                     if i % 1000 == 0:
                         log("Processed {} variants...".format(i))
-                    MNEcid,chrom,pos,allele_A,allele_B = var[
+                    MNEcID,chrom,pos,allele_A,allele_B = var[
                         ['cust_id','cust_chr','cust_pos','Allele A','Allele B']
                     ] 
                     genotypes = var.loc[self.samples]
@@ -130,10 +130,10 @@ class AxiomCalls(object):
                     variant = Variant(
                         chrom, pos, probeid, 
                         allele_A, allele_B,
-                        '.', 'PASS',info='MNEc=1',fmt='GT:GQ',
+                        '.', 'PASS',info='.',fmt='GT:GQ',
                         genos=["{}:42".format(Allele.geno2vcf(x)) for x in genotypes]
                     )
-                    variant.add_info('axiomprobe',probeid)
+                    variant.add_info('MNEcID',MNEcID)
                     if variant.is_polymorphic is False:
                         continue
                     if conform is True:
