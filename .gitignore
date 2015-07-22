@@ -1,3 +1,7 @@
+*.pyc
 *.swp
 *.swo
+build/*
+dist/*
+ponytools.egg-info/*
 __pycache__
