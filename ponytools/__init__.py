@@ -1,5 +1,5 @@
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 __license__ = ('Creative Commons Attribution-NonCommercial 4.0 International License '
                   'http://creativecommons.org/licenses/by-nc/4.0/')
