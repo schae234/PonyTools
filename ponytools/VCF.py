@@ -3,7 +3,6 @@
 import os
 import pickle
 import numpy as np
-import pandas as pc
 
 from collections import defaultdict,OrderedDict
 
@@ -27,8 +26,6 @@ class VCFHeader(OrderedDict):
     def __reduce__(self):
         ''' Reduce is needed to pickle '''
         return type(self),tuple()
-
-
         
 
 class VCF(object):
@@ -510,5 +507,3 @@ class VCF(object):
                 if int(n) > 2: # only biallelic
                     continue
                 print("{}\t{}".format(self.pos(chrom,pos).id,min(freqs)),file=OUT)
-
-
