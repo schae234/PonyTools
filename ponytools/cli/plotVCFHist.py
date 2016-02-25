@@ -18,7 +18,7 @@ from collections import defaultdict
 
 import ponytools as pc
 
-def main(args):
+def plotVCFHist(args):
     vcf = pc.VCF(args.vcf)
     if args.sumstat == 'maf':
         alt_freqs = [v.alt_freq() for v in vcf.iter_variants()] 
@@ -60,18 +60,5 @@ def main(args):
             plt.title('{} InterSNP Distance.'.format(args.title,len(vcf.samples)))
         if args.out is  None:
             args.out = os.path.split(args.vcf)[1].replace('.vcf','_InterDistance.png')
-
     plt.savefig(args.out)
-       
 
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser(description='Python implementation of DI script')
-    parser.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
-    parser.add_argument('--title', default=None)
-    parser.add_argument('--sumstat',type=str,default='maf',choices=['maf','call_rate','inter_distance'])
-    parser.add_argument('--out', action='store', default=None, type=str)
-    parser.add_argument('--bins',type=int,default=20)
-    args = parser.parse_args()
-    sys.exit(main(args))

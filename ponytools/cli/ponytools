@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+import argparse
+import sys
+
+import matplotlib
+# Force matplotlib to not use any Xwindows backend.
+matplotlib.use('Agg')
+
+if __name__ == '__main__':
+    '''--------------------------
+        Main Arguments 
+    --------------------------'''
+    parser = argparse.ArgumentParser(
+        description=(
+            "            ______/``'``'-.                       \n"  
+            "           (_   6  \    .^                        \n"  
+            "         __ `'.__,  |    `'-.                     \n" 
+            "        /_ \  /    /      :`^'                    \n"
+            "      /`/_` \/    /       .'                      \n"
+            "      '/  `'-     |.-'`^. `.                      \n" 
+            "    ____                    __              __    \n" 
+            "   / __ \____  ____  __  __/ /_____  ____  / /____\n" 
+            "  / /_/ / __ \/ __ \/ / / / __/ __ \/ __ \/ / ___/\n" 
+            " / ____/ /_/ / / / / /_/ / /_/ /_/ / /_/ / (__  ) \n"  
+            "/_/    \____/_/ /_/\__, /\__/\____/\____/_/____/  \n"   
+            "                  /____/                          \n"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='"You aren\'t even on the right chromosome!"'
+    )
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help='Drop into ipdb when something bad happens.'
+    )
+    parser.add_argument(
+        '--interactive',
+        action='store_true',
+        default=False,
+        help='Initiate an ipdb session right before exiting.'
+    )
+    parser.add_argument(
+        '--overlook',
+        action='store_true',
+        default=False,
+        help='Skip analysis if files produced by --out exists.'
+    )
+    subparsers = parser.add_subparsers(
+        title='Ponytools. Tools related to analyzing the MNEc SNP Chip.',
+        metavar='Available Commands',
+        description='Use --help with each command for more info',
+    )
+    # Also allow the help message to be printed using the help command
+    helpcmd = subparsers.add_parser('help',help='Prints this help message')
+    parser.set_defaults(func=lambda x: parser.print_help())
+
+    '''--------------------------
+        Axiom 2 VCF 
+    --------------------------'''
+    from AxiomCalls2VCF import AxiomCalls2VCF 
+    a2vcf = subparsers.add_parser(
+        'Axiom2VCF', 
+        aliases=['a2vcf'],
+        help='Convert Axiom calls to a VCF file.' 
+    )
+    a2vcf.add_argument('--calls',help='Axiom Calls File')   
+    a2vcf.add_argument('--samples',help='Axiom Sample File')
+    a2vcf.add_argument('--annot',help='Axiom Annotations File')   
+    a2vcf.add_argument('--fasta',help='Fasta File')   
+    a2vcf.add_argument('--out',help='Oupute file name')
+    a2vcf.set_defaults(func=AxiomCalls2VCF)
+
+    '''------------------------
+        Plot VCF Histo
+    ---------------------------'''
+    #from plotVCFHist import plotVCFHist 
+    plotHist = subparsers.add_parser(
+        'plotVCFHisto',
+        help='Plot histograms based on VCF values, e.g. alt-freq, call_rate, etc.'
+    )
+
+    plotHist.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
+    plotHist.add_argument('--title', default=None)
+    plotHist.add_argument('--sumstat',type=str,default='maf',choices=['maf','call_rate','inter_distance'])
+    plotHist.add_argument('--out', action='store', default=None, type=str)
+    plotHist.add_argument('--bins',type=int,default=20)
+    #plotHist.set_defaults(func=plotVCFHist)
+ 
+
+    args = parser.parse_args()
+    # Add debug options
+    if args.debug is True:
+        from IPython.core import ultratb
+        sys.excepthook = ultratb.FormattedTB(
+            mode='Verbose', color_scheme='Linux', call_pdb=1
+        )
+    # SKip analyses that already happened (if --overlook is provided)
+    if args.overlook is True and len(glob.glob(args.out+'*')):
+        print("Skipping {}* because files already exist.".format(args.out))
+    else:
+        try:
+            return_value = args.func(args)
+        except AttributeError as e:
+            print("No command found. Use --help or help command.")
+            sys.exit(1)
+        if args.interactive is True:
+            from IPython.core import ultratb
+            sys.excepthook = ultratb.FormattedTB(
+                mode='Verbose', color_scheme='Linux', call_pdb=1
+            )
+            from camoco.Exceptions import CamocoInteractive
+            raise CamocoInteractive()
+        sys.exit(return_value)
