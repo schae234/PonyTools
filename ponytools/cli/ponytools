@@ -75,7 +75,7 @@ if __name__ == '__main__':
     '''------------------------
         Plot VCF Histo
     ---------------------------'''
-    #from plotVCFHist import plotVCFHist 
+    from ponytools.cli.plotVCFHist import plotVCFHist 
     plotHist = subparsers.add_parser(
         'plotVCFHisto',
         help='Plot histograms based on VCF values, e.g. alt-freq, call_rate, etc.'
@@ -86,7 +86,20 @@ if __name__ == '__main__':
     plotHist.add_argument('--sumstat',type=str,default='maf',choices=['maf','call_rate','inter_distance'])
     plotHist.add_argument('--out', action='store', default=None, type=str)
     plotHist.add_argument('--bins',type=int,default=20)
-    #plotHist.set_defaults(func=plotVCFHist)
+    plotHist.set_defaults(func=plotVCFHist)
+
+    '''-----------------------
+         PR VCF
+    --------------------------'''
+    from ponytools.cli.PR import VCFPR
+    VCFPR_command = subparsers.add_parser(
+        'PR',
+        help='Compare precision vs recall of two VCFs'
+    )
+    VCFPR_command.add_argument('--vcf-test', type=str, action='store')
+    VCFPR_command.add_argument('--vcf-ref', type=str, action='store')
+    VCFPR_command.add_argument('--out',default=sys.stdout)
+    VCFPR_command.set_defaults(func=VCFPR)
  
 
     args = parser.parse_args()
