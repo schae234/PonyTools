@@ -1,5 +1,5 @@
 
-__version__ = '0.1.3'
+__version__ = '0.1.9'
 
 __license__ = ('Creative Commons Attribution-NonCommercial 4.0 International License '
                   'http://creativecommons.org/licenses/by-nc/4.0/')
@@ -13,4 +13,3 @@ from .Fasta import Fasta
 from .Trio import Trio
 from .Variant import Variant
 from .VCFBuffer import VCFBuffer  
-
