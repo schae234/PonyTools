@@ -43,6 +43,14 @@ class VCF(object):
         # load/create indices
         self.index(force=force)
 
+    def __contains__(self,item):
+        if isinstance(item,Variant):
+            if item.chrom in self.posmap and item.pos in self.posmap[item.chrom]:
+                return True
+            else:
+                return False
+        raise KeyError('Cannot test that item')
+
     @property
     def header_string(self):
        return '\n'.join(['#{}={}'.format(key,val) for key,vals in self.header.items() for val in vals]) 
@@ -123,7 +131,6 @@ class VCF(object):
     def iter_chroms(self):
         return (chrom for chroms in self.posmap.keys())
 
-   
     def sample_call_rate(self):
         ''' returns call rate for samples '''
         pass
@@ -279,15 +286,15 @@ class VCF(object):
 
     def concord_VCF(self,vcf):
         '''
-        Compares a VCF object to another VCF object, comparing calls.        
+            Compares a VCF object to another VCF object, comparing calls.        
             
-        Parameters
-        ----------
-        VCF : ponytools.VCF instance
-            The VCF instance you want to compare to
-                
-        Returns
-        -------
+            Parameters
+            ----------
+            VCF : ponytools.VCF instance
+                The VCF instance you want to compare to
+                    
+            Returns
+            -------
             A PCC table comparing sample genotypes across objects.
         '''
         # iterate through the 
