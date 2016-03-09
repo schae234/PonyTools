@@ -98,6 +98,7 @@ if __name__ == '__main__':
     )
     VCFPR_command.add_argument('--vcf-test', type=str, action='store')
     VCFPR_command.add_argument('--vcf-ref', type=str, action='store')
+    VCFPR_command.add_argument('--score', type=str, default='QUAL', action='store')
     VCFPR_command.add_argument('--out',default=sys.stdout)
     VCFPR_command.set_defaults(func=VCFPR)
 
