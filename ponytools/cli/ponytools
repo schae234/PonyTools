@@ -59,7 +59,7 @@ if __name__ == '__main__':
     '''--------------------------
         Axiom 2 VCF 
     --------------------------'''
-    from AxiomCalls2VCF import AxiomCalls2VCF 
+    from ponytools.cli.AxiomCalls2VCF import AxiomCalls2VCF 
     a2vcf = subparsers.add_parser(
         'Axiom2VCF', 
         aliases=['a2vcf'],
