@@ -83,6 +83,3 @@ def smpl_vcf(tmpdir):
     tmpfile.write(vcf_text)
     vcf = VCF(tmpfile.strpath,force=True)
     return vcf
-    
-    
-

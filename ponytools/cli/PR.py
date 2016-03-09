@@ -1,5 +1,7 @@
 import ponytools as pc
 import pandas as pd
+import numpy as np
+import matplotlib.pylab as plt
 
 def VCFPR(args):
     test = pc.VCF(args.vcf_test) 
@@ -32,7 +34,23 @@ def VCFPR(args):
                     agreement.append((sample,test_var.chrom,test_var.pos,score,True))
                 else:
                     agreement.append((sample,test_var.chrom,test_var.pos,score,False))
-    pd.DataFrame(agreement,columns=['sample','chrom','pos','score','agreement'])\
-    .sort_values(by='score', ascending=False)\
-    .to_csv("{}_PR.csv".format(args.out),sep='\t',index=False)
+    # Turn results into a dataframe
+    agreement = pd.DataFrame(
+        agreement,columns=['sample','chrom','pos','score','agreement']
+    ).sort_values(by='score', ascending=False)
+    # Calculate precision vs recall
+    cummulative = []
+    precision = []
+    for val in agreement.agreement:
+        cummulative.append(val)
+        precision.append(sum(cummulative)/len(cummulative))
+    agreement['precision'] = precision
+    # Create the plot
+    plt.plot(range(1,len(agreement)+1),agreement.precision)
+    plt.ylim(0,1) 
+    plt.xlabel('Variant Rank ({})'.format(args.score))
+    plt.ylabel('Precision')
+    plt.savefig('{}_PR.png'.format(args.out))
+    # Output results table
+    agreement.to_csv("{}_PR.csv".format(args.out),sep='\t',index=False)
     
