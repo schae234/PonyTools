@@ -100,7 +100,23 @@ if __name__ == '__main__':
     VCFPR_command.add_argument('--vcf-ref', type=str, action='store')
     VCFPR_command.add_argument('--out',default=sys.stdout)
     VCFPR_command.set_defaults(func=VCFPR)
- 
+
+
+    '''-----------------------
+         Di
+    --------------------------'''
+    from ponytools.cli.pyDi import pyDi
+    di_parser = subparsers.add_parser(
+        'Di',
+        help='Python implementation of DI script'
+    )
+    di_parser.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
+    di_parser.add_argument('--inds',action='append',help='Files containing individual IDs for groups in DI statistic. Can be specified more than once.')
+    di_parser.add_argument('--window-size',action='store',type=int,default=250000,help='Window size for averaging Di values')
+    di_parser.add_argument('--min-snps-per-window',action='store',type=int,default=4,help='The minimum number of SNPs per window to calculate Di')
+    di_parser.add_argument('--debug', action='store_true', help='DEBUG mode. Only runs first 1k lines of vcf for speed')
+    di_parser.add_argument('--out', action='store', default='pyDi', type=str, help='Prepend output file names with this.')
+    di_parser.set_defaults(func=pyDi)
 
     args = parser.parse_args()
     # Add debug options

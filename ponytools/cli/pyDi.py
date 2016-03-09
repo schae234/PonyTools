@@ -16,11 +16,10 @@ from itertools import combinations as comb
 
 
 
-def main(args):
+def pyDi(args):
     
     #Generate a VCF object
     vcf = VCF(args.vcf)
-
 
     log = logging.getLogger(__name__)
     handler = logging.StreamHandler()
@@ -113,14 +112,4 @@ def main(args):
     if args.debug:
         import pdb; pdb.set_trace()
 
-if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Python implementation of DI script')
-    parser.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
-    parser.add_argument('--inds',action='append',help='Files containing individual IDs for groups in DI statistic. Can be specified more than once.')
-    parser.add_argument('--window-size',action='store',type=int,default=250000,help='Window size for averaging Di values')
-    parser.add_argument('--min-snps-per-window',action='store',type=int,default=4,help='The minimum number of SNPs per window to calculate Di')
-    parser.add_argument('--debug', action='store_true', help='DEBUG mode. Only runs first 1k lines of vcf for speed')
-    parser.add_argument('--out', action='store', default='pyDi', type=str, help='Prepend output file names with this.')
-    args = parser.parse_args()
-    sys.exit(main(args))
