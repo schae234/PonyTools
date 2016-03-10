@@ -1,6 +1,10 @@
 PonyTools
 =========
 
+
+[![Build Status](https://travis-ci.org/schae234/PonyTools.svg?branch=master)](https://travis-ci.org/schae234/PonyTools)
+
+
 Tools for analyzing Variant (VCF) data and the MNEc Affymetrix SNP Chip
 
 Inlcudes python classes for:
@@ -26,6 +30,7 @@ Using pip, installing ponytools is as easy as:
 pip install ponytools
 ```
 We recommend installing ponytools in an [virtual environement](https://virtualenv.pypa.io/en/latest/)
+
 *We love [virtualenvwrapper](https://virtualenvwrapper.readthedocs.org/en/latest/)*
 
 Otherwise, requirements for ponytools include:
