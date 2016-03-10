@@ -33,6 +33,7 @@ setup(
         'matplotlib>=1.4.3',
         'pandas>=0.16',
         'ipython>=4.1.2',
+        'scipy>=0.17.0',
         'ipdb>=0.8'
     ],
 
