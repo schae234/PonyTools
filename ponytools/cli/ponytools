@@ -47,6 +47,12 @@ if __name__ == '__main__':
         default=False,
         help='Skip analysis if files produced by --out exists.'
     )
+    parser.add_argument(
+        '--version',
+        action='store_true',
+        default=False,
+        help='Print version information and exit.'
+    )
     subparsers = parser.add_subparsers(
         title='Ponytools. Tools related to analyzing the MNEc SNP Chip.',
         metavar='Available Commands',
@@ -96,12 +102,11 @@ if __name__ == '__main__':
         'PR',
         help='Compare precision vs recall of two VCFs'
     )
-    VCFPR_command.add_argument('--vcf-test', type=str, action='store')
-    VCFPR_command.add_argument('--vcf-ref', type=str, action='store')
-    VCFPR_command.add_argument('--score', type=str, default='QUAL', action='store')
+    VCFPR_command.add_argument('--vcf-test', type=str, action='store',help='The VCF to test.')
+    VCFPR_command.add_argument('--vcf-ref', type=str, action='store',help='The reference VCF (gold standard)')
+    VCFPR_command.add_argument('--score', type=str, default='QUAL', action='store', help='The quality score used to determine which genotypes are reliable. Default: QUAL.')
     VCFPR_command.add_argument('--out',default=sys.stdout)
     VCFPR_command.set_defaults(func=VCFPR)
-
 
     '''-----------------------
          Di
@@ -118,7 +123,25 @@ if __name__ == '__main__':
     di_parser.add_argument('--debug', action='store_true', help='DEBUG mode. Only runs first 1k lines of vcf for speed')
     di_parser.add_argument('--out', action='store', default='pyDi', type=str, help='Prepend output file names with this.')
     di_parser.set_defaults(func=pyDi)
+    
 
+    '''-----------------------
+         Samples
+    --------------------------'''
+    from ponytools.cli.samples import samples
+    samples_cmd = subparsers.add_parser(
+        'samples',
+        help='List and Manipulate Samples'
+    )
+    samples_cmd.add_argument('vcf',help='VCF file to extract samples from')
+    samples_cmd.add_argument('--split',help='split into two groups',type=float,default=None)
+    samples_cmd.add_argument('--no-permute',help='Do not permute samples, default:False',default=False,action='store_true')
+    samples_cmd.add_argument('--out',help='Samples ouput file',default=sys.stdout)
+    samples_cmd.set_defaults(func=samples)
+
+    '''-----------------------------
+        Parse arguments and execute commands
+    -----------------------------------'''
     args = parser.parse_args()
     # Add debug options
     if args.debug is True:
@@ -129,17 +152,20 @@ if __name__ == '__main__':
     # SKip analyses that already happened (if --overlook is provided)
     if args.overlook is True and len(glob.glob(args.out+'*')):
         print("Skipping {}* because files already exist.".format(args.out))
+    elif args.version is True:
+        from ponytools import __version__ as version
+        print('{}'.format(version))
     else:
         try:
             return_value = args.func(args)
-        except AttributeError as e:
-            print("No command found. Use --help or help command.")
+        except Exception as e:
+            print("A bad thing happened: {}\n\n".format(e)) 
+            print("Use --help for details.\n\n")
+            parser.print_help()
             sys.exit(1)
         if args.interactive is True:
             from IPython.core import ultratb
             sys.excepthook = ultratb.FormattedTB(
                 mode='Verbose', color_scheme='Linux', call_pdb=1
             )
-            from camoco.Exceptions import CamocoInteractive
-            raise CamocoInteractive()
         sys.exit(return_value)
