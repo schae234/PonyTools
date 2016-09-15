@@ -81,18 +81,17 @@ if __name__ == '__main__':
     '''------------------------
         Plot VCF Histo
     ---------------------------'''
-    from ponytools.cli.plotVCFHist import plotVCFHist 
-    plotHist = subparsers.add_parser(
-        'plotVCFHisto',
-        help='Plot histograms based on VCF values, e.g. alt-freq, call_rate, etc.'
+    from ponytools.cli.plotVCFHist import VCFStats
+    VCFStats_cmd = subparsers.add_parser(
+        'VCFStats',
+        help='Plot stats/histograms based on VCF values, e.g. alt-freq, call_rate, etc.'
     )
 
-    plotHist.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
-    plotHist.add_argument('--title', default=None)
-    plotHist.add_argument('--sumstat',type=str,default='maf',choices=['maf','call_rate','inter_distance'])
-    plotHist.add_argument('--out', action='store', default=None, type=str)
-    plotHist.add_argument('--bins',type=int,default=20)
-    plotHist.set_defaults(func=plotVCFHist)
+    VCFStats_cmd.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
+    VCFStats_cmd.add_argument('--lst',help='LST file to break stats down for VCF file for certain SNPs')
+    VCFStats_cmd.add_argument('--ids',nargs='*',default=[],help='IDS file to break stats down for VCF file for certain individuals')
+    VCFStats_cmd.add_argument('--out', action='store', default='out', type=str)
+    VCFStats_cmd.set_defaults(func=VCFStats)
 
     '''-----------------------
          PR VCF
@@ -155,6 +154,7 @@ if __name__ == '__main__':
     elif args.version is True:
         from ponytools import __version__ as version
         print('{}'.format(version))
+        sys.exit(0)
     else:
         try:
             return_value = args.func(args)
