@@ -25,8 +25,6 @@ def samples(args):
     else:
         keep_out = args.out
         remove_out = args.out
-    print("\n".join(keep),file=keep_out)
-    if args.out == sys.stdout:
-        print('----------')
+    print("\n".join(keep),file=keep_out,end='')
     # Print the remove indivs
-    print("\n".join(remove),file=remove_out)
+    print("\n".join(remove),file=remove_out,end='')
