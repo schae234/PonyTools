@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 
 from collections import defaultdict,OrderedDict
+from pysam import VariantFile
 
 from .Tools import log
 from .Variant import Variant
@@ -73,15 +74,31 @@ class VCF(object):
     def _load_genos(self,force=False,transform=Allele.vcf2geno):
         if self._genotypes is not None and force == False:
             return
-        log("Lazy loading genotypes for {}",self.vcffile.name)
-        
+        log("Loading genotypes for {}",self.vcffile.name)
         alleles = []
         ids = []
-        for variant in self.iter_variants():  # We only support bi-allelic SNPS right now!!!!
-            if not variant.is_biallelic:
-                continue
-            alleles.append(variant.alleles(transform=transform))
-            ids.append((variant.chrom,variant.pos,variant.id,variant.ref,variant.alt))
+        # Use the pysam API
+        for i,record in enumerate(VariantFile(self.vcffile.name)): 
+            alleles.append(np.array([
+                int(sum(x.allele_indices)) \
+                if None not in x.allele_indices \
+                else np.nan \
+                for x in record.samples.values()
+            ]))
+            ids.append((
+                record.chrom,   
+                record.pos,
+                record.id,
+                record.ref,
+                record.alts[0]
+            ))
+            if i % 100000 == 0 and i > 0:
+                print("On {}".format(i))
+        #for variant in self.iter_variants():  # We only support bi-allelic SNPS right now!!!!
+        #    if not variant.is_biallelic:
+        #        continue
+        #    alleles.append(variant.alleles(transform=transform))
+        #    ids.append((variant.chrom,variant.pos,variant.id,variant.ref,variant.alt))
         self._genotypes = pd.DataFrame(
                 alleles,
                 index=pd.MultiIndex.from_tuples(ids,names=['chrom','pos','id','ref','alt']),
