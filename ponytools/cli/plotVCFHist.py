@@ -52,12 +52,13 @@ def VCFStats(args):
     samples = np.array(vcf.header.samples)
 
     # Generate a set of SNPs to analyze
-    print('Reading in LST file...',end='')
-    lst = set(
-        tuple(line.strip().split('\t')) \
-        for line in open(args.lst,'r')
-    )
-    print('Done\n')
+    if args.lst:
+        print('Reading in LST file...',end='')
+        lst = set(
+            tuple(line.strip().split('\t')) \
+            for line in open(args.lst,'r')
+        )
+        print('Done\n')
     
     # generate sample masks
     sample_masks = []
@@ -71,7 +72,7 @@ def VCFStats(args):
     chrom = []
     pos = []
     for i,record in enumerate(vcf):
-        if (record.chrom,str(record.pos)) not in lst:
+        if args.lst and (record.chrom,str(record.pos)) not in lst:
             continue
         ids.append(record.id)
         # Calculate MAFs
@@ -101,8 +102,8 @@ def VCFStats(args):
     data.insert(0,'ID',ids)
     data.insert(1,'chr',chrom)
     data.insert(2,'pos',pos)
-    data.insert(4,'distance',inter_distance)
-    data.insert(5,'maf',total_maf)
+    data.insert(3,'distance',inter_distance)
+    data.insert(4,'maf',total_maf)
     # Output Data    
     data.to_csv(args.out+'.tsv',sep='\t')
     return None
