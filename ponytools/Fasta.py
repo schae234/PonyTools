@@ -1,5 +1,6 @@
 from collections import defaultdict
-from ponytools.Tools import Chromosome, log
+from ponytools.Tools import log
+from .Chromosome import Chromosome
 
 from .Exceptions import MissingChromosomeError
 
