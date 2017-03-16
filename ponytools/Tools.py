@@ -25,20 +25,7 @@ def log(message,*formatting):
     print(message.format(*formatting),file=sys.stderr)
 
 
-class Chromosome(object): 
-    '''
-    A Chromosome is a lightweight object which maps indices to 
-    string positions.
-    '''
-    def __init__(self,seq): 
-        self.seq = str(seq) 
-    def __getitem__(self,pos): 
-        #chromosomes start at 1, python strings start at 0 
-        return self.seq[int(pos)-1]
 
-    def __len__(self):
-        return len(self.seq)
- 
 def HW_chi(n_AA,n_AB,n_BB):
     n = sum([n_AA,n_AB,n_BB])
     p = (2*n_AA+n_AB)/(2*n)
