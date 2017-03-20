@@ -28,7 +28,10 @@ setup(
     scripts = [
        'ponytools/cli/ponytools'     
     ],
-
+    include_package_data=True,
+    package_data={
+        'MNEc2MAnnot':'data/MNEc2M_Annotation.csv.gz'    
+    },
     install_requires = [
         'matplotlib>=1.4.3',
         'pandas>=0.16.2',
