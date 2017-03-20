@@ -3,7 +3,7 @@
 import sys
 from optparse import OptionParser
 
-
+'''
 def main(args):
     usage = 'Usage: $ python3 vcf2Di.py [options]'
     parser = OptionParser(usage=usage)
@@ -13,7 +13,7 @@ def main(args):
     parser.add_option('--dummy_qual',default=None, help='Make genotype quality scores up if they are not in the VCF file. specify quality score after flag')
     
     options,args = parser.parse_args(args)
-    with (open(options.vcf,'r') as IN, 
+    with (open(options.vcf,'r') as IN: 
           open(options.out+'.snpinfo','w') as SNP, 
           open(options.out+'.geno','w') as GEN):
         for line in IN:
@@ -54,3 +54,4 @@ def main(args):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
+'''

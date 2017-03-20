@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import ponytools as pc
 
 import matplotlib
 # Force matplotlib to not use any Xwindows backend.
@@ -27,7 +28,10 @@ if __name__ == '__main__':
             "                  /____/                          \n"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='"You aren\'t even on the right chromosome!"'
+        epilog=('\n'.join([
+            '"You aren\'t even on the right chromosome!"',
+            'src: {}'.format(pc.__file__)
+        ]))
     )
     parser.add_argument(
         '--debug',
