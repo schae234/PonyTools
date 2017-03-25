@@ -3,12 +3,17 @@ python:
   - "3.4"
 
 # Setup anaconda
-before_install:
-# Install packages
-  - PIP_ARGS="-I --trusted-host lovelace.cs.umn.edu --find-links=http://lovelace.cs.umn.edu/schaefer/wheelhouse/ --use-wheel --allow-external --allow-insecure"
-  - pip install $PIP_ARGS -r requirements.txt
+env:
+  - LD_LIBRARY_PATH=$HOME/.ponytools/lib:$LD_LIBRARY_PATH PATH=$HOME/.ponytools/bin:$HOME/.ponytools/conda/bin:$PATH
 install:
-  - python setup.py install
-
+  - ./install.py
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
+  - conda install pytest-cov
 script:  
+  - source $HOME/.ponytools/conda/bin/activate ponytools
+  - export PATH=/home/travis/.ponytools/bin/:$PATH
+  - which py.test
   - py.test tests/
