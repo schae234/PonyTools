@@ -116,6 +116,8 @@ source $BASE/conda/bin/activate $NAME
 green 'checking python'
 which python
 
+pip install pysam
+
 #==================================================
 #-----------------Install Camoco-------------------
 #=================================================
