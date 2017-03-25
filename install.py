@@ -116,4 +116,20 @@ source $BASE/conda/bin/activate $NAME
 green 'checking python'
 which python
 
+#==================================================
+#-----------------Install Camoco-------------------
+#=================================================
+green "Installing $NAME"
+cd $CWD
+python setup.py install
+python -c 'import ponytools'
+if [ $? -eq 1 ]
+then
+    red '$NAME failed to install!'
+    exit 1
+else
+    green '$NAME installed!'
+fi
+source deactivate 
+
 
