@@ -6,3 +6,4 @@ build/*
 dist/*
 ponytools.egg-info/*
 __pycache__
+.cache
