@@ -3,7 +3,7 @@ import pytest
 from ponytools.AxiomCalls import AxiomCalls
 from ponytools.Fasta import Fasta
 from ponytools.AxiomAnnot import AxiomAnnot
-from ponytools.Tools import Chromosome
+from ponytools.Chromosome import Chromosome
 from ponytools.VCF import VCF
 
 import pandas as pd

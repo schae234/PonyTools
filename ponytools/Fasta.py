@@ -13,11 +13,19 @@ class Fasta(object):
         self.chroms = {}
         self.nicknames = {}
         self.attributes = defaultdict(list)
+        self._chrom_set = set(self.chroms.keys())
+
+    def __contains__(self,item):
+        if item in self._chrom_set:
+            return True
+        else:
+            return False
 
     def add_chrom(self,chrom_name,chromosome):
         log("Adding new chromosome: {}",chrom_name)
         self.added_order.append(chrom_name)
         self.chroms[chrom_name] = chromosome
+
 
     def add_attribute(self,chrom_name,attr):
         self.attributes[chrom_name].append(attr)
