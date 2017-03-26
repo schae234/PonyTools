@@ -276,7 +276,7 @@ class Variant(object):
             return False
 
 
-    def conform(self,reference_genotype,GT_index=0,inplace=False):
+    def conform(self,reference_genotype,GT_index=0):
         '''
             Conforms a variant to a reference genotype.
 
@@ -291,7 +291,10 @@ class Variant(object):
             This happens IN PLACE.
 
         '''
-        if self.alt == self.ref and self.ref != reference_genotype:
+        # Just return if the genotype is already conformed
+        if self.ref == reference_genotype:
+            return self
+        elif self.alt == self.ref and self.ref != reference_genotype:
             # Sometimes PLINK will assign both the alt and reference
             # to the same thing, just make everyone alternate
             self.ref = reference_genotype
@@ -318,8 +321,6 @@ class Variant(object):
             ))
         elif not self.is_biallelic:
             raise TriAllelicError('cannot conform triallelic SNP: {}'.format(self.id))
-        elif self.ref == reference_genotype:
-            return self
         else:
             # Conform
             self.alt,self.ref = self.ref,self.alt
