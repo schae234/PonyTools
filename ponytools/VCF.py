@@ -27,22 +27,44 @@ class VCFHeader(OrderedDict):
     def __reduce__(self):
         ''' Reduce is needed to pickle '''
         return type(self),tuple()
-        
+
+    def __str__(self):
+        return "{}\n{}".format(
+           '\n'.join(['##{}={}'.format(key,val) for key,vals in self.items() for val in vals]),
+           '\t'.join(['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']+self.samples)
+        )
+  
+    @classmethod
+    def from_file(cls,filename):
+        self = cls()
+        with open(filename,'r') as HEADER:
+            for line in HEADER:
+                if line.startswith('##'):
+                    key,val = line.lstrip('#').rstrip().split('=',1)
+                    self[key].append(val)
+                elif line.startswith("#"):
+                    samples = line.strip().split()[9:]
+                    self.samples = samples
+                else:
+                    break
+        return self
 
 class VCF(object):
     def __init__(self,vcffile,force=False):
         self.vcffile = open(vcffile,'r')
-        self.header = VCFHeader()
+        self.header = VCFHeader.from_file(vcffile)
         # keep track of a bunch of indexes
         self.idmap = {}
         self.posmap = defaultdict(dict)
         self.indexmap = []
-        # Keep track of samples
-        self.samples = []
         # experimental genotype data frame
         self._genotypes = None
         # load/create indices
         self.index(force=force)
+
+    @property
+    def samples(self):
+        return self.header.samples
 
     def __contains__(self,item):
         if isinstance(item,Variant):
@@ -116,11 +138,8 @@ class VCF(object):
             cur_byte = 0
             self.vcffile.seek(0)
             for line in self.vcffile:
-                if line.startswith('##'):
-                    key,val = line.lstrip('#').rstrip().split('=',1)
-                    self.header[key].append(val)
-                elif line.startswith("#"):
-                    self.samples = line.strip().split()[9:]
+                if line.startswith('#'):
+                    continue
                 else:
                     chrom,pos,ids,*junk = line.strip().split()
                     pos = int(pos)
@@ -131,10 +150,10 @@ class VCF(object):
                 cur_byte += len(line)
             self.vcffile.seek(0)
             # pickle index file for later use
-            pickle.dump((self.header,self.idmap,self.posmap,self.samples,self.indexmap),open(self.vcffile.name+".pdx",'wb'))
+            pickle.dump((self.idmap,self.posmap,self.indexmap),open(self.vcffile.name+".pdx",'wb'))
         else:
             # read the index file
-            self.header,self.idmap,self.posmap,self.samples,self.indexmap = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
+            self.idmap,self.posmap,self.indexmap = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
 
     @property
     def sample_line(self):
@@ -144,6 +163,9 @@ class VCF(object):
         ''' returns variant generator, for iteration. Should be memory efficient '''
         self.vcffile.seek(0)
         return (Variant.from_str(line) for line in self.vcffile if not line.startswith('#'))
+
+    def __iter__(self):
+        return self.iter_variants()
 
     def iter_chroms(self):
         return (chrom for chroms in self.posmap.keys())
@@ -214,29 +236,6 @@ class VCF(object):
             transform = lambda x:x
         return pd.DataFrame([self.id(id).genos([self.samples.index(s) for s in sample_list],transform=transform)
             for id in id_list],index=id_list,columns=sample_list)
-
-    def concord_chad(self,chadfile,sample_file):
-        # read in chads calls
-        samples = pd.read_table(sample_file,sep=',')
-        samples = samples[['BestArray','SampleName']].set_index('BestArray').to_dict()['SampleName']
-
-        import re
-        
-        columns = []
-        index = []
-        data = []
-        with open(chadfile,'r') as IN:
-            for line in IN:
-                fields = line.strip().split('\t') 
-                if fields[0] == 'probeset_id':
-                    # in header
-                    columns = [samples[re.match('(.*.CEL): Base \d',x).groups()[1]] for x in fields[1::2]]
-                else:
-                    index.append(fields[0])
-                    data.append(list(zip(y[1::2],y[2::2])))
-                    
-                    
-
 
     def concord_AxiomCalls(self,calls,annot,by_axiomid=False):
         '''
