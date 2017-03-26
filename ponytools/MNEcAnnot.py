@@ -13,6 +13,13 @@ class MNEc2MAnnot(object):
             low_memory=False
         )
 
+    def __contains__(self,item):
+        pass
+
+
+    
+    # Everything below here is BS    
+        
     def ix(self,probeid):
         return self._annot.xs(probeid,level='Probe Set ID')
 
