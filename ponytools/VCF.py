@@ -139,7 +139,8 @@ class VCF(object):
             self.vcffile.seek(0)
             for line in self.vcffile:
                 if line.startswith('#'):
-                    continue
+                    # we need to pass here so that curbyte gets updated below
+                    pass
                 else:
                     chrom,pos,ids,*junk = line.strip().split()
                     pos = int(pos)
