@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 import sys
+import tempfile
 from optparse import OptionParser
 
 
 def log(message,*formatting):
     print(message.format(*formatting),file=sys.stderr)
 
-def sortVCF(vcf_file,fasta_file,temp_dir="/tmp",out="sorted.vcf"):
+def sortVCF(args):
+    import sys,os
+    vcf_file = args.vcf
+    fasta_file = args.fasta
+    temp_dir="/tmp"
+    out = args.out
+
     headers = list()
     variants = list()
     cur_byte = 0
@@ -20,34 +27,33 @@ def sortVCF(vcf_file,fasta_file,temp_dir="/tmp",out="sorted.vcf"):
                 chrom,*info = line.strip().lstrip('>').split()
                 log("Found chromosome {}",chrom)
                 chroms.append(chrom)
-                temps[chrom] = open(os.path.join(temp_dir,chrom+'.tmp'),'w')
+                temps[chrom] = tempfile.NamedTemporaryFile('w') 
     # Get headers and extract positions with file byte offsets
     log("Reading in VCF: {}",vcf_file)
     with open(vcf_file,'r') as VCF:
         for i,line in enumerate(VCF):
-            line = line.strip()
             if line.startswith("#"):
-                headers.append(line)
+                headers.append(line.strip())
             else:
                 chrom,pos,*junk = line.split()
-                print(line,file=temps[chrom])
+                temps[chrom].write(line)
     # close all temp files
     for key,val in temps.items():
-        log("Closing tmp file: {}",key)
-        val.close()
+        log("flushing tmp file: {}",key)
+        val.flush()
     log("soring chroms")
     with open(out,'w') as OUT:
         # print headers
         print("\n".join(headers),file=OUT)
         for chrom in chroms:
             # read in that chroms bullshit
-            with open(os.path.join(temp_dir,chrom+'.tmp'),'r') as CHROM:
+            with open(temps[chrom].name,'r') as CHROM:
                 variants =  CHROM.readlines()
                 # sort by position
                 variants.sort(key=lambda x: int(x.split()[1]))
                 log("printing chrom {}",chrom)
                 print("".join(variants),file=OUT,end="")
-                os.remove(os.path.join(temp_dir,chrom+'.tmp'))
+                temps[chrom].close()
 
 def main(args):
     parser=OptionParser()
@@ -58,7 +64,6 @@ def main(args):
     options,args = parser.parse_args(args)
     
     sortVCF(options.vcf,options.fasta,out=options.out)
-
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:])) 

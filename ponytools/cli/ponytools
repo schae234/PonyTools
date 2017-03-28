@@ -66,6 +66,19 @@ if __name__ == '__main__':
     helpcmd = subparsers.add_parser('help',help='Prints this help message')
     parser.set_defaults(func=lambda x: parser.print_help())
 
+    '''---------------------------
+    Sort VCFs
+    ---------------------------'''
+    from ponytools.cli.sortVCF import sortVCF
+    vcfSorter = subparsers.add_parser(
+        'sortVCF',
+        help='Sort a VCF file based on a FASTA file'
+    )
+    vcfSorter.add_argument('--vcf',help='unsorted VCF file')
+    vcfSorter.add_argument('--fasta',help='fasta file')
+    vcfSorter.add_argument('--out',default='sorted.vcf',help='output name [default: sorted.vcf]')
+    vcfSorter.set_defaults(func=sortVCF)
+
     '''--------------------------
         Axiom 2 VCF 
     --------------------------'''
