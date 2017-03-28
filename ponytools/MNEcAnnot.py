@@ -16,6 +16,12 @@ class MNEc2MAnnot(object):
     def __contains__(self,item):
         pass
 
+    def __getitem__(self,item):
+        '''
+            Try your damndest to fetch a record
+        '''
+        pass 
+
 
     
     # Everything below here is BS    
