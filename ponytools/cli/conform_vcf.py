@@ -1,40 +1,72 @@
-#!/usr/bin/env python3
-import sys
-import ponytools as pc
 import argparse
 
-from ponytools.Exceptions import TriAllelicError
-
-def main(args):
-
+def conform(args):
+    from ponytools.MNEcAnnot import MNEc2MAnnot
+    from ponytools.Exceptions import TriAllelicError
+    import ponytools as pc
+    # get a mapping of prones to chrom positionss
+    annot = MNEc2MAnnot()
+    # build the BIEC index
+    id_map = {
+        **{x:y for x,y in zip(annot._annot.ProbeSetID,zip(annot._annot.chrom,annot._annot.pos,annot._annot.MNEcID))},
+        **{x:y for x,y in zip(annot._annot.AffySNPID,zip(annot._annot.chrom,annot._annot.pos,annot._annot.MNEcID))},
+        **{x:y for x,y in zip([x.split('.')[4] for x in annot._annot.MNEcID],zip(annot._annot.chrom,annot._annot.pos,annot._annot.MNEcID))},
+        **{x:y for x,y in zip(zip(annot._annot.chrom,annot._annot.pos),zip(annot._annot.chrom,annot._annot.pos,annot._annot.MNEcID))}
+    }
+    REF_map = {
+            x:(y,z) for x,(y,z) in zip(annot._annot.MNEcID,zip(annot._annot.REF,annot._annot.ALT))
+    }
+     
+    # Iterate over the VCF
     vcf = pc.VCF(args.vcf)
-    fasta = pc.Fasta.from_file(args.fasta)
-
-    vcf.header['programs'].append('ponytools_conform_vcf')
-
     with open(args.out,'w') as OUT:
-        # print the header
-        for key,values in vcf.header.items():
-            for val in values:
-                print("##{}={}".format(key,val),file=OUT)
-        print(vcf.sample_line,file=OUT)
-        for i,variant in enumerate(vcf.iter_variants()):
-            if i+1 % 10000 == 0:
-                print("On SNP {}".format(i),file=sys.stderr)
-            # figure out the fasta ref
-            fasta_ref = fasta[variant.chrom][variant.pos]
+        #Clear the header, add the actual chromosomes
+        vcf.header['contig'] = []
+        for chrom in annot._annot.chrom.unique():
+            vcf.header['contig'].append('<ID={}>'.format(chrom))
+        print(vcf.header,file=OUT)
+        for i,variant in enumerate(vcf):
+            # Update the chrom and position to be reflect the MNEc naming format 
+            if variant.id in id_map:
+                chrom,pos,mnecid = id_map[variant.id]
+                variant.chrom = chrom
+                variant.pos = pos
+                variant.id = mnecid 
+            elif ('{}'.format(variant.chrom),variant.pos) in id_map:
+                chrom = variant.chrom
+                pos = variant.pos
+                if not chrom.startswith('chr'):
+                    chrom = 'chr{}'.format(chrom)
+                chrom,pos,mnecid = id_map[('{}'.format(chrom),variant.pos)]
+                variant.chrom = chrom
+                variant.pos = pos
+                variant.id = mnecid 
+            else:
+                continue
+            # Make sure the genotypes are conformed
+            if variant.alt == '.':
+                variant.alt = REF_map[variant.id][1]
             try:
-                variant.conform(fasta_ref)
+                variant.conform(REF_map[variant.id][0])
             except TriAllelicError as e:
                 continue
-            print(str(variant),file=OUT)
+            try:
+                assert variant.alt == REF_map[variant.id][1]
+            except AssertionError as e:
+                continue
+            # Fix the borked dot genotpyes
+            for i,x in enumerate(variant.genos):
+                if x == '.':
+                    variant.genos[i] = './.'
+            print(variant,file=OUT)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Python implementation of DI script')
-    parser.add_argument('--vcf',action='store',help='VCF file containing all individuals and genotypes')
-    parser.add_argument('--fasta',action='store',help='FASTA file containing the reference genotypes')
-    parser.add_argument('--out', action='store', default='', type=str, help='Prepend output file names with this.')
-    args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Conform input VCFs to match MNEc Reference Population')
+    parser.add_argument('--vcf')
+    parser.add_argument('--fasta')
+    parser.add_argument('--out')
 
-    sys.exit(main(args)) 
+    args = parser.parse_args()
+    conform(args)
+
