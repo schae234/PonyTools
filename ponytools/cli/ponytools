@@ -66,6 +66,20 @@ if __name__ == '__main__':
     helpcmd = subparsers.add_parser('help',help='Prints this help message')
     parser.set_defaults(func=lambda x: parser.print_help())
 
+
+    '''---------------------------
+    Conform VCFs
+    ---------------------------'''
+    from ponytools.cli.conform_vcf import conform
+    vcfConformer = subparsers.add_parser(
+        'conformVCF',
+        help='Conform a VCF based on a FASTA File and MNEc2M Annotations'
+    )
+    vcfConformer.add_argument('--vcf')
+    vcfConformer.add_argument('--fasta')
+    vcfConformer.add_argument('--out')
+    vcfConformer.set_defaults(func=conform)
+
     '''---------------------------
     Sort VCFs
     ---------------------------'''
