@@ -8,7 +8,7 @@ import matplotlib
 # Force matplotlib to not use any Xwindows backend.
 matplotlib.use('Agg')
 
-if __name__ == '__main__':
+def ponytoolsCLI():
     '''--------------------------
         Main Arguments 
     --------------------------'''
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         help='Print version information and exit.'
     )
     subparsers = parser.add_subparsers(
-        title='Ponytools. Tools related to analyzing the MNEc SNP Chip.',
+        title='Ponytools. Tools related to analyzing the MNEc SNP Chip',
         metavar='Available Commands',
         description='Use --help with each command for more info',
     )
@@ -164,10 +164,23 @@ if __name__ == '__main__':
         help='List and Manipulate Samples'
     )
     samples_cmd.add_argument('vcf',help='VCF file to extract samples from')
-    samples_cmd.add_argument('--split',help='split into two groups',type=float,default=None)
+    samples_cmd.add_argument('--vcf',help='A second VCF file to extract/compare samples from')
+    samples_cmd.add_argument('--split',help='Split into two groups. Provide a float to split the data.',type=float,default=None)
     samples_cmd.add_argument('--no-permute',help='Do not permute samples, default:False',default=False,action='store_true')
     samples_cmd.add_argument('--out',help='Samples ouput file',default=sys.stdout)
     samples_cmd.set_defaults(func=samples)
+
+
+    '''-----------------------
+         Samples
+    --------------------------'''
+    from ponytools.cli.impute import impute
+    impute_cmd = subparsers.add_parser(
+        'impute',
+        help='Imputation pipeline',
+    )
+    impute_cmd.set_defaults(func=impute)
+
 
     '''-----------------------------
         Parse arguments and execute commands
@@ -193,6 +206,8 @@ if __name__ == '__main__':
             print("A bad thing happened: {}\n\n".format(e)) 
             print("Use --help for details.\n\n")
             parser.print_help()
+            if args.debug:
+                raise e
             sys.exit(1)
         if args.interactive is True:
             from IPython.core import ultratb
@@ -200,3 +215,6 @@ if __name__ == '__main__':
                 mode='Verbose', color_scheme='Linux', call_pdb=1
             )
         sys.exit(return_value)
+
+if __name__ == '__main__':
+    ponytoolsCLI()

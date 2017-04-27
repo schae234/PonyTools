@@ -1,9 +1,10 @@
-from ponytools import VCF
-import numpy as np
-import math
-import sys
 
 def samples(args):
+    from ponytools import VCF
+    import numpy as np
+    import math
+    import sys
+
     keep = VCF(args.vcf).samples
     remove = []
     if args.no_permute != True:

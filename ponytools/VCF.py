@@ -3,6 +3,7 @@
 import os
 import pickle
 import numpy as np
+import gzip
 
 from collections import defaultdict,OrderedDict
 from pysam import VariantFile
@@ -37,21 +38,27 @@ class VCFHeader(OrderedDict):
     @classmethod
     def from_file(cls,filename):
         self = cls()
-        with open(filename,'r') as HEADER:
-            for line in HEADER:
-                if line.startswith('##'):
-                    key,val = line.lstrip('#').rstrip().split('=',1)
-                    self[key].append(val)
-                elif line.startswith("#"):
-                    samples = line.strip().split()[9:]
-                    self.samples = samples
-                else:
-                    break
+        if filename.endswith('gz'):
+            file = gzip.open(filename,'rt')
+        else:
+            file = open(filename,'r')
+        for line in file:
+            if line.startswith('##'):
+                key,val = line.lstrip('#').rstrip().split('=',1)
+                self[key].append(val)
+            elif line.startswith("#"):
+                samples = line.strip().split()[9:]
+                self.samples = samples
+            else:
+                break
         return self
 
 class VCF(object):
     def __init__(self,vcffile,force=False):
-        self.vcffile = open(vcffile,'r')
+        if vcffile.endswith('gz'):
+            self.vcffile = gzip.open(vcffile,'rt')
+        else:
+            self.vcffile = open(vcffile,'r')
         self.header = VCFHeader.from_file(vcffile)
         # keep track of a bunch of indexes
         self.idmap = {}
