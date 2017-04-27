@@ -1,9 +1,8 @@
-import ponytools as pc
-import pandas as pd
-import numpy as np
-import matplotlib.pylab as plt
 
 def VCFPR(args):
+    import ponytools as pc
+    import pandas as pd
+    import numpy as np
     test = pc.VCF(args.vcf_test) 
     ref = pc.VCF(args.vcf_ref) 
 
@@ -46,6 +45,7 @@ def VCFPR(args):
         precision.append(sum(cummulative)/len(cummulative))
     agreement['precision'] = precision
     # Create the plot
+    import matplotlib.pylab as plt
     plt.plot(range(1,len(agreement)+1),agreement.precision)
     plt.ylim(0,1) 
     plt.xlabel('Variant Rank ({})'.format(args.score))

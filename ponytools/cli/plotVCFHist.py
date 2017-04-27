@@ -1,26 +1,10 @@
 #!/usr/bin/env python3.4
 
-import matplotlib
-# Force matplotlib to not use any Xwindows backend.
-matplotlib.use('Agg')
-
-import argparse
-import os
-import sys
-
-import ipdb as pdb
-import pandas as pd
 import numpy as np
-import logging
 
-from matplotlib import pyplot as plt
-from collections import defaultdict
-from pysam import VariantFile
-
-import ponytools as pc
-import glob
 
 class SampleMask(object):
+    import os
     def __init__(self, id_file, samples):
         self.name = os.path.basename(id_file).replace('.ids','')
         self.ids = set([line.strip() for line in open(id_file).readlines()])
@@ -47,6 +31,8 @@ def record_distance(a,b):
         return abs(a[1]-b[1])
 
 def VCFStats(args):
+    import pandas as pd
+    from pysam import VariantFile
     vcf = VariantFile(args.vcf)
     # get an array of the samples
     samples = np.array(vcf.header.samples)

@@ -1,22 +1,18 @@
 #!/usr/bin/env python3.4
 
-import argparse
-import os
-import sys
-
-import ipdb as pdb
-import pandas as pd
-import numpy as np
-import logging
-
-from ponytools.VCF import VCF
-from ponytools.Variant import Fst
-from collections import defaultdict
-from itertools import combinations as comb
-
-
-
 def pyDi(args):
+    import argparse
+    import os
+    import sys
+
+    import pandas as pd
+    import numpy as np
+    import logging
+
+    from ponytools.VCF import VCF
+    from ponytools.Variant import Fst
+    from collections import defaultdict
+    from itertools import combinations as comb
     
     #Generate a VCF object
     vcf = VCF(args.vcf)
