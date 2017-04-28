@@ -170,9 +170,14 @@ def ponytoolsCLI():
     samples_cmd.add_argument('--out',help='Samples ouput file',default=sys.stdout)
     samples_cmd.set_defaults(func=samples)
 
+    '''-----------------------
+         Shape
+    --------------------------'''
+
+
 
     '''-----------------------
-         Samples
+         Impute
     --------------------------'''
     from ponytools.cli.impute import impute
     impute_cmd = subparsers.add_parser(
