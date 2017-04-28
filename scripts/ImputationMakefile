@@ -26,18 +26,24 @@ init:
 	mkdir -p $(OUTPUT)/Conformed
 	mkdir -p $(OUTPUT)/Imputed
 	mkdir -p $(OUTPUT)/Sorted
+	mkdir -p $(OUTPUT)/Filtered
+	mkdir -p $(OUTPUT)/DuplicateIDs
 
 phase: 
-	# phase the reference genome 
+	# phase the reference genome
 	java -jar $(JARPATH)/beagle.21Jan17.6cc.jar \
 		gt=$(REF)/2M_data_wTB_10252015.valid.vcf \
 		out=$(REF)/2M_data_wTB_10252015.phased \
 		nthreads=$(IMPUTETHREADS)
 	# Conform the phased reference
 	ponytools conformVCF \
-	--vcf $(REF)/2M_data_wTB_10252015.phased.vcf.gz \
-	--out $(REF)/2M_data_wTB_10252015.phased.conformed.vcf
+		--vcf $(REF)/2M_data_wTB_10252015.phased.vcf.gz \
+		--out $(REF)/2M_data_wTB_10252015.phased.conformed.vcf
 	# Sort the phased reference
+	ponytools sortVCF \
+		--vcf $(REF)/2M_data_wTB_10252015.phased.vcf.gz \
+		--out $(REF)/2M_data_wTB_10252015.phased.conformed.sorted.vcf
+	
 
 # Target File Options
 conform:
@@ -45,7 +51,7 @@ conform:
 		ponytools conformVCF \
 		--vcf {} \
 		--out $(OUTPUT)/Conformed/{/} \
-		::: $(shell find $(INPUT)/VCFs -name $(VCFPATTERN))
+	::: $(shell find $(INPUT)/VCFs -name $(VCFPATTERN))
 
 sort:
 	parallel --gnu -j $(THREADS)\
@@ -53,18 +59,20 @@ sort:
 		--vcf {} \
 		--fasta $(FASTAPATH)/Equus_cab_nucl_wChrUn1_2.fasta \
 		--out $(OUTPUT)/Sorted/{/} \
-		::: $(shell find $(OUTPUT)/Conformed/ -name $(VCFPATTERN))
+	::: $(shell find $(OUTPUT)/Conformed/ -name $(VCFPATTERN))
+
+find-duplicates:
+	vcftools --vcf $(OUTPUT)/Sorted/$$i --diff $(REF)/2M_data_wTB_10252015.phased.conformed.sorted.vcf --diff-indv --stdout | grep  -P '\sB' | cut -f 1 | sort -R > $(OUTPUT)/DuplicateIDs/$$i.dups  
 
 impute:
 	parallel --gnu -j $(THREADS) $(PFLAGS) \
 		java -jar $(JARPATH)/beagle.21Jan17.6cc.jar \
         	ne=$(NE) \
-		excludesamples=DupBelgians.ids \
 		nthreads=$(IMPUTETHREADS) \
 		gt={} \
 		ref=$(INPUT)/ReferenceVCFs/2M_data_wTB_10252015.phased.conformed.sorted.vcf \
 		out=$(OUTPUT)/Imputed/{/.}$(TAG) \
-		::: $(shell find $(OUTPUT)/Sorted/ -name $(VCFPATTERN))
+	::: $(shell find $(OUTPUT)/Filtered/ -name $(VCFPATTERN))
 
 clean:
 	rm -fr $(OUTPUT)/*
