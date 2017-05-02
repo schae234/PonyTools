@@ -80,7 +80,7 @@ class Variant(object):
         return self
        
     @property
-    def phased(self):
+    def is_phased(self):
         ''' return bool on phase state '''
         if '|' in self.genos[0]:
             return True

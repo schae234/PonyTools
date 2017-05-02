@@ -4,6 +4,7 @@ import os
 import pickle
 import numpy as np
 import gzip
+import random
 
 from collections import defaultdict,OrderedDict
 from pysam import VariantFile
@@ -169,9 +170,19 @@ class VCF(object):
         return '\t'.join(['#CHROM','POS','ID','REF','ALT','QUAL','FILTER','INFO','FORMAT']+self.samples)
 
     def iter_variants(self):
-        ''' returns variant generator, for iteration. Should be memory efficient '''
+        ''' 
+            Returns variant generator, for iteration. Should be memory efficient 
+        '''
         self.vcffile.seek(0)
         return (Variant.from_str(line) for line in self.vcffile if not line.startswith('#'))
+
+    def rand_variant(self):
+        '''
+            Returns a random variant from the VCF File
+        '''
+        rand_index = random.sample(self.indexmap,k=1)[0]
+        self.vcffile.seek(rand_index)
+        return Variant.from_str(self.vcffile.readline())
 
     def __iter__(self):
         return self.iter_variants()
@@ -201,6 +212,14 @@ class VCF(object):
 
     def __len__(self):
         return len(self.indexmap)
+
+    @property
+    def is_phased(self):
+        '''
+           Samples 100 random variants for phase  
+        '''
+        variants = [self.rand_variant() for x in range(100)]
+        return all([x.is_phased for x in variants])
 
     @property
     def shape(self):

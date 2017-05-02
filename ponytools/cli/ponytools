@@ -66,6 +66,21 @@ def ponytoolsCLI():
     helpcmd = subparsers.add_parser('help',help='Prints this help message')
     parser.set_defaults(func=lambda x: parser.print_help())
 
+    '''--------------------------
+        Axiom 2 VCF 
+    --------------------------'''
+    from ponytools.cli.AxiomCalls2VCF import AxiomCalls2VCF 
+    a2vcf = subparsers.add_parser(
+        'Axiom2VCF', 
+        aliases=['a2vcf'],
+        help='Convert Axiom calls to a VCF file.' 
+    )
+    a2vcf.add_argument('--calls',help='Axiom Calls File')   
+    a2vcf.add_argument('--samples',help='Axiom Sample File')
+    a2vcf.add_argument('--annot',help='Axiom Annotations File')   
+    a2vcf.add_argument('--fasta',help='Fasta File')   
+    a2vcf.add_argument('--out',help='Oupute file name')
+    a2vcf.set_defaults(func=AxiomCalls2VCF)
 
     '''---------------------------
     Conform VCFs
@@ -93,21 +108,16 @@ def ponytoolsCLI():
     vcfSorter.add_argument('--out',default='sorted.vcf',help='output name [default: sorted.vcf]')
     vcfSorter.set_defaults(func=sortVCF)
 
-    '''--------------------------
-        Axiom 2 VCF 
+    '''-----------------------
+         Info
     --------------------------'''
-    from ponytools.cli.AxiomCalls2VCF import AxiomCalls2VCF 
-    a2vcf = subparsers.add_parser(
-        'Axiom2VCF', 
-        aliases=['a2vcf'],
-        help='Convert Axiom calls to a VCF file.' 
+    from ponytools.cli.VCFInfo import VCFInfo
+    info_cmd = subparsers.add_parser(
+        'VCFInfo',
+        help='Print information about a VCF File'
     )
-    a2vcf.add_argument('--calls',help='Axiom Calls File')   
-    a2vcf.add_argument('--samples',help='Axiom Sample File')
-    a2vcf.add_argument('--annot',help='Axiom Annotations File')   
-    a2vcf.add_argument('--fasta',help='Fasta File')   
-    a2vcf.add_argument('--out',help='Oupute file name')
-    a2vcf.set_defaults(func=AxiomCalls2VCF)
+    info_cmd.add_argument('vcf',help='The VCF File to print information about')
+    info_cmd.set_defaults(func=VCFInfo)
 
     '''------------------------
         Plot VCF Histo
@@ -129,7 +139,7 @@ def ponytoolsCLI():
     --------------------------'''
     from ponytools.cli.PR import VCFPR
     VCFPR_command = subparsers.add_parser(
-        'PR',
+        'VCFPR',
         help='Compare precision vs recall of two VCFs'
     )
     VCFPR_command.add_argument('--vcf-test', type=str, action='store',help='The VCF to test.')
@@ -171,18 +181,12 @@ def ponytoolsCLI():
     samples_cmd.set_defaults(func=samples)
 
     '''-----------------------
-         Shape
-    --------------------------'''
-
-
-
-    '''-----------------------
          Impute
     --------------------------'''
     from ponytools.cli.impute import impute
     impute_cmd = subparsers.add_parser(
-        'impute',
-        help='Imputation pipeline',
+        'imputation',
+        help='Setup the imputation pipeline',
     )
     impute_cmd.set_defaults(func=impute)
 
