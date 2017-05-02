@@ -18,6 +18,16 @@ def smpl_var():
     )
 
 @pytest.fixture
+def smpl_var_phased():
+    return pc.Variant(
+        'chr1',100,'SNP1',
+        'A','C',
+        qual=100,fltr='PASS',
+        info='.',fmt='GT:GQ',
+        genos=['0|0:42','0|1:42','1|1:42']
+    )
+
+@pytest.fixture
 def missing_var():
     return pc.Variant(
         'chr1',100,'SNP1',
@@ -118,3 +128,7 @@ def test_too_many_missing_alt_freq(missing_var):
     
 def test_subtraction():
     assert pc.Variant('chr1',1000,'SNP1','A','C') - pc.Variant('chr1',1500,'SNP2','T','G') == 500    
+
+
+def test_phased(smpl_var_phased):
+    assert smpl_var_phased.is_phased == True
