@@ -135,9 +135,10 @@ class VCF(object):
         )
 
     def index(self,force=False):
-        if (not os.path.exists(self.vcffile.name+'.pdx') \
+        index_name = '.' + self.vcffile.name + '.pdx'
+        if (not os.path.exists(index_name) \
                 or force \
-                or os.path.getmtime(self.vcffile.name) > os.path.getmtime(self.vcffile.name+'.pdx')
+                or os.path.getmtime(self.vcffile.name) > os.path.getmtime(index_name)
             ):
             # create the index file
             log('Index file does not exist for {}, indexing now'.format(self.vcffile.name))
@@ -158,10 +159,10 @@ class VCF(object):
                 cur_byte += len(line)
             self.vcffile.seek(0)
             # pickle index file for later use
-            pickle.dump((self.idmap,self.posmap,self.indexmap),open(self.vcffile.name+".pdx",'wb'))
+            pickle.dump((self.idmap,self.posmap,self.indexmap),open(index_name,'wb'))
         else:
             # read the index file
-            self.idmap,self.posmap,self.indexmap = pickle.load(open(self.vcffile.name+'.pdx','rb')) 
+            self.idmap,self.posmap,self.indexmap = pickle.load(open(index_name,'rb')) 
 
     @property
     def sample_line(self):
