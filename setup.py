@@ -30,7 +30,8 @@ setup(
     ],
     include_package_data=True,
     package_data={
-        'MNEc2MAnnot':'data/MNEc2M_Annotation.csv.gz'    
+        'MNEc2MAnnot':'data/MNEc2M_Annotation.csv.gz', 
+        'ImputationMakefile':'scripts/ImputationMakefile'
     },
     install_requires = [
         'matplotlib>=1.4.3',
