@@ -31,7 +31,8 @@ class Variant(object):
         -1 : -1, 0 : 0, 1 : 1, 2 : 2,
         '.|.' : -1, '0|0' : 0, '0|1' : 1, '1|0' : 1, '1|1' : 2,
     }
- 
+
+
     def __init__(self, chrom, pos, id, ref, alt, qual='.', fltr='PASS', info='.', fmt='GT:GQ', genos=None):
         '''
         A fairly lightweight representation of a VCF compatible variant.        
@@ -157,6 +158,19 @@ class Variant(object):
         except KeyError as e:
             pass
         raise Exception("Value not found")
+
+    def __cmp__(self,other):
+        if self.chrom < other.chrom:
+            return -1
+        if self.chrom > other.chrom:
+            return 1
+        if self.chrom == other.chrom:
+            if self.pos < other.pos:
+                return -1
+            if self.pos > other.pos:
+                return 1
+            else:
+                return 0
 
     def __repr__(self):
         return "<PonyTools Variant at: {} {}>".format(self.chrom,self.pos)
