@@ -190,6 +190,18 @@ def ponytoolsCLI():
     )
     impute_cmd.set_defaults(func=impute)
 
+    '''-----------------------
+         DosageR2
+    --------------------------'''
+    from ponytools.cli.dosageR2 import dosageR2
+    dr2 = subparsers.add_parser(
+        'dosageR2',
+        help='Calculate the Dosage r^2 between reference and imputed SNPs'
+    )
+    dr2.add_argument('refvcf',help='The reference VCF that has the true Dosage')
+    dr2.add_argument('impvcf',help='The imputed VCF that has the estimated dosage for each sample')
+    dr2.add_argument('--out',help="The name of the output file",default=None)
+    dr2.set_defaults(func=dosageR2)
 
     '''-----------------------------
         Parse arguments and execute commands
