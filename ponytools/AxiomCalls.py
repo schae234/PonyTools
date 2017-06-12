@@ -66,10 +66,17 @@ class AxiomCalls(object):
         if sample_file is not None:
             # Replace the column names with sample names
             log('Replacing CELs with Samples names')
-            samples = pd.read_table(sample_file,sep=',')
+            if sample_file.endswith('.xls'):
+                samples = pd.read_excel(sample_file)
+            elif sample_file.endswith('.xlsx'):
+                samples = pd.read_excel(sample_file)
+            else:
+                samples = pd.read_table(sample_file,sep=',')
+            # Remove the spaces from the Column Names
+            samples.columns = [x.replace(' ','') for x in samples.columns.values]
             samples = samples[['BestArray','SampleName']].set_index('BestArray').to_dict()
             self._calls.columns = self.uniqify(
-                [samples['SampleName'].get(CEL,CEL) for CEL in self._calls.columns]
+                [samples['SampleName'].get(CEL.replace('.CEL',''),CEL) for CEL in self._calls.columns]
             )
         return self
  
@@ -118,7 +125,7 @@ class AxiomCalls(object):
                 log('Printing {}',chrom_name)
                 chrom_vars = variants[variants.cust_chr == chrom_name].join(
                     self._calls,how='inner'
-                ).sort('cust_pos',ascending=True)
+                ).sort_values(by='cust_pos',ascending=True)
                 for i,(probeid,var) in enumerate(chrom_vars.iterrows()):
                     if i % 1000 == 0:
                         log("Processed {} variants...".format(i))
