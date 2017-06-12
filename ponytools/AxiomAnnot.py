@@ -1,4 +1,5 @@
 import pandas as pd
+from .Tools import skipno,log
 
 class AxiomAnnot(object):
     def __init__(self,df,filename=None): 
@@ -100,7 +101,7 @@ class AxiomAnnot(object):
     @classmethod
     def from_file(cls,filename,sep=','):
         # create an empty data structure
-        df = pd.read_table(filename,sep=sep)
+        df = pd.read_table(filename,sep=sep,skiprows=skipno(filename))
         self = cls(df, filename=filename)
         return self
 
