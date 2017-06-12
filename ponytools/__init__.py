@@ -6,7 +6,6 @@ __license__ = ('Creative Commons Attribution-NonCommercial 4.0 International Lic
 
 from .VCF import VCF
 from .Allele import Allele
-from .AxiomGeno import AxiomGeno
 from .AxiomAnnot import AxiomAnnot
 from .MNEcAnnot import MNEc2MAnnot
 from .AxiomCalls import AxiomCalls
