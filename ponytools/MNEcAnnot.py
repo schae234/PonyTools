@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import pkg_resources
 
 class MNEc2MAnnot(object):
@@ -10,30 +11,39 @@ class MNEc2MAnnot(object):
         self._annot = pd.read_csv(
             pkg_resources.resource_stream('ponytools','data/MNEc2M_Annotation.csv.gz'),
             compression='gzip',
-            low_memory=False
+            low_memory=False,
         )
-
-    def __contains__(self,item):
-        pass
+        self._build_BIECIndex()
+        # Create the multiIndex
+        self._annot.set_index(['MNEcID','AffySNPID','ProbeSetID','BIECID','chrom','pos'],inplace=True)
 
     def __getitem__(self,item):
         '''
             Try your damndest to fetch a record
         '''
-        pass 
+        if isinstance(item,tuple) and len(item) == 2:
+            # looks like coordinates
+            chrom,pos = item
+            return self._annot.xs((str(chrom),int(pos)),level=('chrom','pos'))
+        elif item.upper().startswith('MNEC'):
+            return self._annot.xs(item,level='MNEcID')
+        elif item.startswith('Affx-'):
+            return self._annot.xs(item,level='AffySNPID')
+        elif item.startswith('AX-'):
+            return self._annot.xs(item,level='ProbeSetID')
+        elif item.startswith('BIEC-'):
+            return self._annot.xs(item,level='BIECID')
+        else:
+            raise ValueError('Not a valid item')
 
-
-    
-    # Everything below here is BS    
-        
-    def ix(self,probeid):
-        return self._annot.xs(probeid,level='Probe Set ID')
 
     def _build_BIECIndex(self):
-        self._annot['BIECID'] = [x.split('.')[4] if 'BIEC' in x else np.nan for x in annot._annot.MNEcID]
+        '''
+            This generates the legacy BIEC IDs from the annotation file
+        '''
+        self._annot['BIECID'] = [x.split('.')[4] if 'BIEC' in x else np.nan for x in self._annot.MNEcID]
 
-
-    def probe2MNEcid(self,probeid):
+    def getMNEcid(self,item):
         '''
         Converts between a probe id and the MNEc id.        
             
@@ -46,35 +56,31 @@ class MNEc2MAnnot(object):
         -------
         A string containing the MNEc id.
         '''
-        x = self._annot.xs(probeid,level='Probe Set ID')
-        cust_id = x.index.get_level_values('cust_id')
+        x = self[item]
+        cust_id = x.index.get_level_values('MNEcID')
         return cust_id[0]
 
-
-    def probe2loc(self, probeid):
+    def getloc(self, item):
         ''' 
             Convert a probe ID to its corresponding genomic chrom and pos.
 
             Parameters
             ----------
-            probeid: str
-                the probe you want to look up
+            item: str
+                the item you want to look up. Can be the 
+                MNEcID, probe id, AffX ID, etc
 
             Returns
             -------
                 a tuple containing chrom and pos
 
         '''
-        x = self._annot.xs(probeid,level='Probe Set ID')
-        chrom = x.index.get_level_values('cust_chr')
-        pos   = x.index.get_level_values('cust_pos')
-        if len(chrom) != 1:
-            raise ValueError(
-                "Probe {} has more than one coordinate.".format(probeid)
-            )
-        return (chrom[0],pos[0])
+        x = self[item]
+        chrom = x.index.get_level_values('chrom')[0]
+        pos   = x.index.get_level_values('pos')[0]
+        return (chrom,pos)
 
-    def loc2probe(self, chrom, pos, allow_multiple=False):
+    def getprobe(self, item):
         '''
             Converts genomic positions to corresponding probe ID
 
@@ -105,17 +111,4 @@ class MNEc2MAnnot(object):
             return probe.values[0]
         else:
             return probe.values
-
-
-    @classmethod
-    def from_file(cls,filename,sep=','):
-        # create an empty data structure
-        df = pd.read_table(filename,sep=sep)
-        self = cls(df, filename=filename)
-        return self
-
-
-
-
-
 
