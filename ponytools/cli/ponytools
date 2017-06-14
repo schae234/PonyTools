@@ -105,8 +105,21 @@ def ponytoolsCLI():
     )
     vcfSorter.add_argument('--vcf',help='unsorted VCF file')
     vcfSorter.add_argument('--fasta',help='fasta file')
-    vcfSorter.add_argument('--out',default='sorted.vcf',help='output name [default: sorted.vcf]')
+    vcfSorter.add_argument('--out',default=None,help='output name [default: append .sorted.vcf to input file]')
     vcfSorter.set_defaults(func=sortVCF)
+
+    '''-----------------------
+         Info
+    --------------------------'''
+    from ponytools.cli.compareVCF import compareVCF
+    vcfcmp = subparsers.add_parser(
+        'compareVCF',
+        help='compare two VCFs. No need to be sorted or conformed, we will handle that!'
+    )
+    vcfcmp.add_argument('--vcf1',help='fist vcf file')
+    vcfcmp.add_argument('--vcf2',help='second vcf file')
+    vcfcmp.add_argument('--fasta',help='reference FASTA file')
+    vcfcmp.set_defaults(func=compareVCF)
 
     '''-----------------------
          Info
@@ -202,6 +215,7 @@ def ponytoolsCLI():
     dr2.add_argument('impvcf',help='The imputed VCF that has the estimated dosage for each sample')
     dr2.add_argument('--out',help="The name of the output file",default=None)
     dr2.set_defaults(func=dosageR2)
+
 
     '''-----------------------------
         Parse arguments and execute commands
