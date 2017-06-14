@@ -1,3 +1,4 @@
+from tqdm import *
 
 def dosageR2(args):
     import ponytools as pc
@@ -45,9 +46,7 @@ def dosageR2(args):
         refAC.extend([AC for x in range(len(reference_dosage))])
         ids.extend([ref.id for x in range(len(reference_dosage))])
 
-    for i,impvar in enumerate(imputedVCF):
-        if i % 100000 == 0 and i > 0:
-            print("On variant {}".format(i))
+    for i,impvar in enumerate(tqdm(imputedVCF)):
         # Look in the refBuffer for a matching variant
         found_flag = False
         for j,refvar in enumerate(refBuffer):
