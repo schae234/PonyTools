@@ -11,7 +11,6 @@ def sortVCF(args):
     import sys,os
     vcf_file = args.vcf
     fasta_file = args.fasta
-    temp_dir="/tmp"
     out = args.out
 
     headers = list()
