@@ -13,7 +13,12 @@ class Allele(object):
             '0/2' : -1,
             '2/0' : -1,
             '1/2' : -1,
-            '2/1' : -1
+            '2/1' : -1,
+            '1/2' : -1,
+            '3/2' : -1,
+            '2/3' : -1,
+            '3/1' : -1,
+            '1/3' : -1
         }[allele_code.replace('|','/')]
     @staticmethod
     def geno2vcf(allele_code):
