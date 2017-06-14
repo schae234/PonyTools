@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import scipy
 
 from .Exceptions import TriAllelicError,InfoKeyError
+from ponytools.Allele import Allele
 
 def Fst(alt_freq_i,alt_freq_j):
     '''
@@ -91,7 +93,7 @@ class Variant(object):
     @property
     def is_biallelic(self):
         ''' return bool true if variant is biallelic '''
-        if ',' in self.alt:
+        if ',' in self.alt or ',' in self.ref:
             return False
         else:
             return True
@@ -269,12 +271,27 @@ class Variant(object):
             return [transform(geno.split(':')[gt_index]) for geno in self.genos]
 
     def r2(self,variant,samples_i,samples_j):
-        ''' returns the r2 value with another variant '''
+        ''' 
+        Returns the r2 value with another variant 
+        '''
+        # Conform variants
+        variant.conform(self.ref)
         # find common individuals
-        geno1 = np.array(self.genos(transform=Allele.vcf2geno,samples_i=samples_i))
-        geno2 = np.array(variant.genos(transform=Allele.vcf2geno,samples_i=samples_j))
+        geno1 = np.array(self.alleles(transform=Allele.vcf2geno,samples_i=samples_i))
+        geno2 = np.array(variant.alleles(transform=Allele.vcf2geno,samples_i=samples_j))
         non_missing = (geno1!=-1)&(geno2!=-1)
         return (scipy.stats.pearsonr(geno1[non_missing],geno2[non_missing]))[0]**2
+   
+    def discordance(self,variant,samples_i,samples_j):
+        '''
+        '''
+        variant.conform(self.ref)
+        geno1 = np.array(self.alleles(transform=Allele.vcf2geno,samples_i=samples_i))
+        geno2 = np.array(variant.alleles(transform=Allele.vcf2geno,samples_i=samples_j))
+        non_missing = (geno1!=-1)&(geno2!=-1)
+        discordant = sum(geno1[non_missing]!=geno2[non_missing])
+        return (discordant,sum(non_missing))
+
     
     def __sub__(self,variant):
         ''' returns the distance between SNPs '''
