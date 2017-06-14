@@ -90,10 +90,10 @@ class AxiomCalls(object):
         ----------
         filename : str
             output filename
-        AxiomAnnot : ponytool.AxiomAnnot instance
-            Probe information.
         Fasta : ponytools.Fasta instance (default: None)
             Proper reference information. If None, default REF is A Allele.
+        AxiomAnnot : ponytool.AxiomAnnot instance
+            Probe information.
         conform: bool (default=True)
             Arranges the genotype calls the the REF is the allele found in
             the Fasta object at that locus.
@@ -121,11 +121,14 @@ class AxiomCalls(object):
                     'QUAL','FILTER','INFO','FORMAT']+list(self.samples)),file=OUT)
             # reset index and join tables
             variants = AxiomAnnot._annot.reset_index().set_index('Probe Set ID')
+            # Print the chromosomes in the order they appear in the fasta file
             for chrom_name in Fasta.added_order:
                 log('Printing {}',chrom_name)
+                # Join the variants with the calls (inner) and sort by chromosomal position
                 chrom_vars = variants[variants.cust_chr == chrom_name].join(
                     self._calls,how='inner'
                 ).sort_values(by='cust_pos',ascending=True)
+                # Iterate over each (sorted) variants ...
                 for i,(probeid,var) in enumerate(chrom_vars.iterrows()):
                     if i % 1000 == 0:
                         log("Processed {} variants...".format(i))
@@ -134,6 +137,7 @@ class AxiomCalls(object):
                     ] 
                     genotypes = var.loc[self.samples]
                     assert genotypes.shape[0] == len(self.samples)
+                    # In the AxiomGeno files,  
                     variant = Variant(
                         chrom, pos, probeid, 
                         allele_A, allele_B,
@@ -141,7 +145,8 @@ class AxiomCalls(object):
                         genos=["{}:42".format(Allele.geno2vcf(x)) for x in genotypes]
                     )
                     variant.add_info('MNEcID',MNEcID)
-                    if variant.is_polymorphic is False:
+
+                    if variant.is_polymorphic == False:
                         continue
                     if conform is True:
                         try:
