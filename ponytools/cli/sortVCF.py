@@ -54,16 +54,3 @@ def sortVCF(args):
                 log("printing chrom {}",chrom)
                 print("".join(variants),file=OUT,end="")
                 temps[chrom].close()
-
-def main(args):
-    parser=OptionParser()
-    parser.add_option('--vcf',help='unsorted VCF file')
-    parser.add_option('--fasta',help='fasta file')
-    parser.add_option('--out',default='sorted.vcf',help='output name [default: sorted.vcf]')
-
-    options,args = parser.parse_args(args)
-    
-    sortVCF(options.vcf,options.fasta,out=options.out)
-
-if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:])) 
