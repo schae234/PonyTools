@@ -97,6 +97,10 @@ class Variant(object):
             return False
         else:
             return True
+
+    @property
+    def coor(self):
+        return (self.chrom, self.pos)
     
     def add_info(self,key,val):
         '''
