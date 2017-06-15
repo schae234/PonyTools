@@ -40,7 +40,7 @@ def sortVCF(args):
     for key,val in temps.items():
         log("flushing tmp file: {}",key)
         val.flush()
-    log("soring chroms")
+    log("sorting chroms")
     with open(out,'w') as OUT:
         # print headers
         print("\n".join(headers),file=OUT)
