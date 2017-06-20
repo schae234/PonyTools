@@ -5,6 +5,7 @@ from .Chromosome import Chromosome
 from .Exceptions import MissingChromosomeError
 
 import re
+from tqdm import * 
 
 class Fasta(object):
     def __init__(self):
@@ -22,7 +23,6 @@ class Fasta(object):
             return False
 
     def add_chrom(self,chrom_name,chromosome):
-        log("Adding new chromosome: {}",chrom_name)
         self.added_order.append(chrom_name)
         self.chroms[chrom_name] = chromosome
 
@@ -48,7 +48,7 @@ class Fasta(object):
         with open(self._file,'r') as IN: 
             cur_chrom = None
             cur_seqs = []
-            for line in IN:
+            for line in tqdm(IN,desc='Parsing FASTA:'):
                 line = line.strip()
                 if line.startswith('>'):
                     # Finish the last chromosome before adding a new one
