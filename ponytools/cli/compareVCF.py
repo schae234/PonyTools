@@ -2,6 +2,8 @@ from tqdm import *
 from ponytools.Exceptions import TriAllelicError,InfoKeyError
 from multiprocessing import Pool,Pipe
 import os
+import time
+from datetime import timedelta
 
 # print out variants into temp files
 def parse_VCF(VCF):
@@ -86,6 +88,7 @@ def compareVCF(args):
     import pandas as pd
     import numpy as np
     import os
+    start_time = time.time()
     # Create VCF objects
     VCF1 = pc.VCF(args.vcf1)
     VCF2 = pc.VCF(args.vcf2)
@@ -115,3 +118,6 @@ def compareVCF(args):
 
     # Print out total stats
     print('Discordance: {}'.format(discordant/compared))
+    end_time = time.time()
+    elapsed = str(timedelta(seconds=(end_time-start_time)))
+    print('Elapsed time: {}'.format(elapsed))
