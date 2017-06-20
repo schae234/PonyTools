@@ -62,6 +62,16 @@ class Variant(object):
         self.genos = genos
 
     @classmethod
+    def from_iter(cls,iter):
+        '''
+        Creates a variant from a iterable or arguments.
+        It assumes that the items are in order, e.g. from a VCF line
+        '''
+        chrom,pos,id,ref,alt,qual,fltr,info,fmt,*genotypes = iter
+        self = cls(chrom,pos,id,ref,alt,qual,fltr,info,fmt,genos=genotypes)
+        return self
+
+    @classmethod
     def from_str(cls,string):
         chrom,pos,id,ref,alt,qual,fltr,info,fmt,*genotypes = string.strip().split()
         self = cls(chrom,pos,id,ref,alt,qual,fltr,info,fmt,genos=genotypes)
@@ -288,6 +298,10 @@ class Variant(object):
    
     def discordance(self,variant,samples_i,samples_j):
         '''
+        Returns a tuple (x,y,[z]) containing:
+            x : the number of discordant genotypes
+            y : the number of conpared genotypes
+            z : (optional) a vector containing per sample measures
         '''
         variant.conform(self.ref)
         geno1 = np.array(self.alleles(transform=Allele.vcf2geno,samples_i=samples_i))
