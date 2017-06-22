@@ -249,7 +249,7 @@ def ponytoolsCLI():
             sys.excepthook = ultratb.FormattedTB(
                 mode='Verbose', color_scheme='Linux', call_pdb=1
             )
-        sys.exit(return_value)
+        sys.exit()#return_value)
 
 if __name__ == '__main__':
     ponytoolsCLI()

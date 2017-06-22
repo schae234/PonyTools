@@ -4,6 +4,7 @@ from multiprocessing import Pool,Pipe
 import os
 import time
 from datetime import timedelta
+import numpy as np
 
 # print out variants into temp files
 def parse_VCF(VCF):
@@ -41,15 +42,15 @@ def parse_chromfile(filename,sample_mask):
     return (var,seenpos)
 
 def cmp_geno(xgeno,ygeno,xmap,ymap):
-    dis = 0
-    tot = 0
+    dis = np.zeros(len(xgeno))
+    tot = np.zeros(len(xgeno))
     weird = 0
     if xmap != ymap:
         # we need to conform ygenos to xmap
         weird += 1
         #conformed = [xmap.index(y) for y in ymap]
         #ygeno = ['/'.join(conformed[a],conformed[b]) for a,b in map(lambda x: x.split('/'),ygeno)]
-    for x,y in zip(xgeno,ygeno):
+    for i,(x,y) in enumerate(zip(xgeno,ygeno)):
         if x.startswith('.') or y.startswith('.'):
             continue
         elif x == y:
@@ -57,8 +58,8 @@ def cmp_geno(xgeno,ygeno,xmap,ymap):
         elif x == y[::-1]:
             pass
         else:
-            dis += 1
-        tot += 1
+            dis[i] += 1
+        tot[i] += 1
     return (dis,tot,weird)
 
 def compare_chroms(tpl):
@@ -70,8 +71,8 @@ def compare_chroms(tpl):
     iter1 = (x for x in var1 if x[1] in seen_both)
     iter2 = (x for x in var2 if x[1] in seen_both)
 
-    tot_dis = 0
-    tot_cmp = 0
+    tot_dis = np.zeros(len(smask1))
+    tot_cmp = np.zeros(len(smask1))
     tot_weird = 0
     for x,y in zip(iter1,iter2):
         x_map = [x[3]]+x[4].split(',')
@@ -81,9 +82,12 @@ def compare_chroms(tpl):
         tot_dis += dis
         tot_cmp += cmp
         tot_weird += weird
-    return (tot_dis,tot_cmp)
+    return (tot_dis,tot_cmp,tot_weird)
 
 def compareVCF(args):
+    '''
+        Compare the discordance between VCFs
+    '''
     import ponytools as pc
     import pandas as pd
     import numpy as np
@@ -113,11 +117,36 @@ def compareVCF(args):
     print('Comparing chromosomes....')
     chrom_discordances = pool.map(compare_chroms,chroms)
 
-    discordant = sum([x[0] for x in chrom_discordances])
-    compared = sum([x[1] for x in chrom_discordances])
+    discordant = pd.DataFrame([x[0] for x in chrom_discordances]).sum()
+    compared = pd.DataFrame([x[1] for x in chrom_discordances]).sum()
+    total_discordance = (discordant.sum()/compared.sum())*100
+    weird = sum([x[2] for x in chrom_discordances])
 
     # Print out total stats
-    print('Discordance: {}'.format(discordant/compared))
     end_time = time.time()
     elapsed = str(timedelta(seconds=(end_time-start_time)))
+    print('------------------------')
     print('Elapsed time: {}'.format(elapsed))
+    print('Analyzed {} Samples'.format(len(smpl_both)))
+    print('------------------------')
+    print('Discordance: {}%'.format(total_discordance))
+    print('Weird: {}'.format(weird))
+    print('------------------------')
+    if total_discordance > 0:
+        print('Offending individuals:')
+        ind_discordant = pd.DataFrame(
+            [x[0] for x in chrom_discordances],
+            columns=smpl_both
+        ).sum()
+        ind_compared = pd.DataFrame(
+            [x[1] for x in chrom_discordances],
+            columns=smpl_both
+        ).sum()
+        ind_percent = (ind_discordant / ind_compared).sort_values(ascending=False) 
+        print(ind_percent[ind_percent > 0])
+
+    for v in temps1.values():
+        os.remove(v)
+    for v in temps2.values():
+        os.remove(v)
+    return total_discordance,len(smpl_both)
