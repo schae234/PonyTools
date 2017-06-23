@@ -68,7 +68,7 @@ class VCF(object):
         # experimental genotype data frame
         self._genotypes = None
         # load/create indices
-        #self.index(force=force)
+        self.index(force=force)
 
     @property
     def samples(self):
