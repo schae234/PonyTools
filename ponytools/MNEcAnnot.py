@@ -58,7 +58,7 @@ class MNEc2MAnnot(object):
         try:
             _ = self[chrom,int(pos)]
             return True
-        except ValueError as e:
+        except KeyError as e:
             return False
 
     def in670(self,chrom,pos):
@@ -75,7 +75,7 @@ class MNEc2MAnnot(object):
         try:
             _ = self[chrom,int(pos)]
             return all(_.in670 == True)
-        except ValueError as e:
+        except KeyError as e:
             return False
 
     def getMNEcid(self,item):
