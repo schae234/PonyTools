@@ -57,7 +57,10 @@ class MNEc2MAnnot(object):
         '''
         try:
             _ = self[chrom,int(pos)]
-            return True
+            if len(_) != 0:
+                return True
+            else:
+                return False
         except KeyError as e:
             return False
 
