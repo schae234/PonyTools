@@ -68,7 +68,7 @@ class VCF(object):
         # experimental genotype data frame
         self._genotypes = None
         # load/create indices
-        self.index(force=force)
+        #self.index(force=force)
 
     @property
     def samples(self):
@@ -101,7 +101,7 @@ class VCF(object):
             self._load_genos()
         return self._genotypes
 
-    def _load_genos(self,force=False,transform=Allele.vcf2geno):
+    def _load_genos(self,force=False,transform=Allele.vcf2geno,randomize_missing=False):
         if self._genotypes is not None and force == False:
             return
         log("Loading genotypes for {}",self.vcffile.name)
@@ -560,3 +560,6 @@ class VCF(object):
                 if int(n) > 2: # only biallelic
                     continue
                 print("{}\t{}".format(self.pos(chrom,pos).id,min(freqs)),file=OUT)
+
+
+
