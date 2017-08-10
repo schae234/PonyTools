@@ -26,7 +26,6 @@ class Fasta(object):
         self.added_order.append(chrom_name)
         self.chroms[chrom_name] = chromosome
 
-
     def add_attribute(self,chrom_name,attr):
         self.attributes[chrom_name].append(attr)
 
@@ -62,8 +61,9 @@ class Fasta(object):
                     if nickname != None:
                         pattern,replace = nickname
                         alt = re.sub(pattern,replace,line)
-                        log('Found a nickname: mapping {} -> {}',alt,name)
-                        self.nicknames[alt] = name
+                        if alt != line:
+                            log('Found a nickname: mapping {} -> {}',alt,name)
+                            self.nicknames[alt] = name
                 else:
                     cur_seqs.append(line)
             # Add the last chromosome
