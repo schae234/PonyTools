@@ -67,6 +67,8 @@ def compare_chroms(tpl):
     var1,seen1pos = parse_chromfile(file1,smask1)
     var2,seen2pos = parse_chromfile(file2,smask2)
     seen_both = seen1pos.intersection(seen2pos)
+    vcf1_only = len(seen1pos) - len(seen_both)
+    vcf2_only = len(seen2pos) - len(seen_both)
     
     iter1 = (x for x in var1 if x[1] in seen_both)
     iter2 = (x for x in var2 if x[1] in seen_both)
@@ -82,7 +84,7 @@ def compare_chroms(tpl):
         tot_dis += dis
         tot_cmp += cmp
         tot_weird += weird
-    return (tot_dis,tot_cmp,tot_weird)
+    return (tot_dis,tot_cmp,tot_weird,len(seen_both),vcf1_only,vcf2_only)
 
 def compareVCF(args):
     '''
@@ -121,6 +123,9 @@ def compareVCF(args):
     compared = pd.DataFrame([x[1] for x in chrom_discordances]).sum()
     total_discordance = (discordant.sum()/compared.sum())*100
     weird = sum([x[2] for x in chrom_discordances])
+    seen_both = sum([x[3] for x in chrom_discordances])
+    seen_1 = sum([x[4] for x in chrom_discordances])
+    seen_2 = sum([x[5] for x in chrom_discordances])
 
     # Print out total stats
     end_time = time.time()
@@ -128,6 +133,9 @@ def compareVCF(args):
     print('------------------------')
     print('Elapsed time: {}'.format(elapsed))
     print('Analyzed {} Samples'.format(len(smpl_both)))
+    print('Compared {} SNPs'.format(seen_both))
+    print('{} SNPs in vcf1 only'.format(seen_1))
+    print('{} SNPs in vcf2 only'.format(seen_2))
     print('------------------------')
     print('Discordance: {}%'.format(total_discordance))
     print('Weird: {}'.format(weird))
