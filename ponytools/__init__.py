@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ''')
 
+from .VarDab import VarDab
 from .VCF import VCF
 from .Allele import Allele
 from .AxiomAnnot import AxiomAnnot
