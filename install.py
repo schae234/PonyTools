@@ -103,7 +103,7 @@ then
     conda config --append channels conda-forge
     conda config --append channels blaze
     conda create -y -n $NAME python=3 setuptools pip cython numpy scipy pandas \
-        matplotlib ipython ipdb pytest-cov tqdm 
+        matplotlib ipython ipdb pytest-cov tqdm  
 else
     green 'conda already installed'
 fi
