@@ -1,12 +1,13 @@
 import pytest
 
 from ponytools.AxiomCalls import AxiomCalls
-from ponytools.Fasta import Fasta
 from ponytools.AxiomAnnot import AxiomAnnot
 from ponytools.Chromosome import Chromosome
 from ponytools.VCF import VCF
 
 import pandas as pd
+
+from locuspocus import Fasta
 
 
 annot_text = '''"Probe Set ID","Affy SNP ID","dbSNP RS ID","Chromosome","Physical Position","Strand","Flank","Allele A","Allele B","cust_chr","cust_id","cust_pos","ChrXpseudo-autosomal region 1","ChrX pseudo-autosomal region 2","Genetic Map"
