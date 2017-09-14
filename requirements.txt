@@ -1,4 +1,5 @@
-git+https://github.com/schae234/Minus80.git
+git+https://github.com/LijnkagIO/Minus80.git
+git+https://github.com/LinkageIO/LocusPocus.git
 ipdb==0.9.0
 matplotlib==1.4.3
 pandas>=0.16.2
