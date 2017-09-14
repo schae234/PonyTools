@@ -118,7 +118,7 @@ def ponytoolsCLI():
     )
     vcfcmp.add_argument('--vcf1',help='fist vcf file')
     vcfcmp.add_argument('--vcf2',help='second vcf file')
-    vcfcmp.add_argument('--cores',default=8,help='The number of cores to use for processing')
+    vcfcmp.add_argument('--cores',type=int,default=8,help='The number of cores to use for processing')
     vcfcmp.set_defaults(func=compareVCF)
 
     '''-----------------------

@@ -84,7 +84,7 @@ def compare_chroms(tpl):
         tot_dis += dis
         tot_cmp += cmp
         tot_weird += weird
-    return (tot_dis,tot_cmp,tot_weird,len(seen_both),vcf1_only,vcf2_only)
+     return (tot_dis,tot_cmp,tot_weird,len(seen_both),vcf1_only,vcf2_only)
 
 def compareVCF(args):
     '''

@@ -1,5 +1,5 @@
 git+https://github.com/schae234/Minus80.git
 ipdb==0.9.0
 matplotlib==1.4.3
-pandas==0.16.2
+pandas>=0.16.2
 scipy==0.16.0
