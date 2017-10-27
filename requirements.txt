@@ -1,4 +1,2 @@
-ipdb==0.9.0
-matplotlib==1.4.3
-pandas==0.16.2
-scipy==0.16.0
+git+https://github.com/LinkageIO/Minus80.git
+git+https://github.com/LinkageIO/LocusPocus.git

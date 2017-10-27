@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import tempfile
+import resource
 from optparse import OptionParser
+from ponytools.Fasta import Fasta
 
 
 def log(message,*formatting):
@@ -18,15 +20,17 @@ def sortVCF(args):
     cur_byte = 0
     chroms = list() 
     temps  = dict()
+
     log("Sorting {}",vcf_file)
     # Get the chromosome order
-    with open(fasta_file,'r') as FASTA:
-        for line in FASTA:
-            if line.startswith('>'):
-                chrom,*info = line.strip().lstrip('>').split()
-                log("Found chromosome {}",chrom)
-                chroms.append(chrom)
-                temps[chrom] = tempfile.NamedTemporaryFile('w') 
+    fasta = Fasta.from_file(fasta_file,nickname=(r'.*chromosome ([\dX]+).*',r'chr\1')) 
+    # Iterate through the chromosome keys and open temp files
+    try:
+        for chrom in fasta.chroms.keys():
+            temps[chrom] = tempfile.NamedTemporaryFile('w') 
+            chroms.append(chrom)
+    except Exception as e:
+        log('{}: try increasing the open file limit on your system',e)
     # Get headers and extract positions with file byte offsets
     log("Reading in VCF: {}",vcf_file)
     with open(vcf_file,'r') as VCF:
@@ -35,12 +39,20 @@ def sortVCF(args):
                 headers.append(line.strip())
             else:
                 chrom,pos,*junk = line.split()
+                if chrom in fasta.nicknames:
+                    chrom = fasta.nicknames[chrom]
                 temps[chrom].write(line)
     # close all temp files
     for key,val in temps.items():
         log("flushing tmp file: {}",key)
         val.flush()
-    log("soring chroms")
+    log("Outputting sorted chroms")
+    if out == None:
+        out = vcf_file
+        if out.endswith('.vcf'):
+            out = out.replace('.vcf','.sorted.vcf')
+        else:
+            out = out.append('.sorted.vcf')
     with open(out,'w') as OUT:
         # print headers
         print("\n".join(headers),file=OUT)

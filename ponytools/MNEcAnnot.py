@@ -43,6 +43,44 @@ class MNEc2MAnnot(object):
         '''
         self._annot['BIECID'] = [x.split('.')[4] if 'BIEC' in x else np.nan for x in self._annot.MNEcID]
 
+
+    def in2M(self,chrom,pos):
+        '''
+        Returns True if coordinates in the MNEc2M Set
+
+        Parameters
+        ----------
+        chrom: str
+            chromosome name
+        pos: int
+            chromosome position
+        '''
+        try:
+            _ = self[chrom,int(pos)]
+            if len(_) != 0:
+                return True
+            else:
+                return False
+        except KeyError as e:
+            return False
+
+    def in670(self,chrom,pos):
+        '''
+        Returns True if coordinates in the MNEc670k Set
+
+        Parameters
+        ----------
+        chrom: str
+            chromosome name
+        pos: int
+            chromosome position
+        '''
+        try:
+            _ = self[chrom,int(pos)]
+            return all(_.in670 == True)
+        except KeyError as e:
+            return False
+
     def getMNEcid(self,item):
         '''
         Converts between a probe id and the MNEc id.        

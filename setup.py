@@ -4,7 +4,11 @@ import os
 import io
 import re
 
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 from setuptools import setup, find_packages, Extension
+
+from subprocess import check_call
 
 def read(*names, **kwargs):
     with io.open(
@@ -21,6 +25,23 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        print('Running post-installation for apsw')
+        check_call('''\
+        pip install -r requirements.txt
+        '''.split())
+        develop.run(self)
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        check_call('''\
+        pip install -r requirements.txt
+        '''.split())
+        install.run(self)
+
 setup(
     name = 'ponytools',
     version = find_version('ponytools','__init__.py'),
@@ -29,10 +50,19 @@ setup(
        'ponytools/cli/ponytools'     
     ],
     include_package_data=True,
+    ext_modules = [],
+    cmdclass = {
+        #'build_ext': build_ext
+        'develop': PostDevelopCommand,
+        'install': PostInstallCommand,
+    },
     package_data={
         'MNEc2MAnnot':'data/MNEc2M_Annotation.csv.gz', 
         'ImputationMakefile':'scripts/ImputationMakefile'
     },
+    dependency_links = [
+        ''
+    ],
     install_requires = [
         'matplotlib>=1.4.3',
         'pandas>=0.16.2',

@@ -109,7 +109,7 @@ def ponytoolsCLI():
     vcfSorter.set_defaults(func=sortVCF)
 
     '''-----------------------
-         Info
+         Compare
     --------------------------'''
     from ponytools.cli.compareVCF import compareVCF
     vcfcmp = subparsers.add_parser(
@@ -118,7 +118,7 @@ def ponytoolsCLI():
     )
     vcfcmp.add_argument('--vcf1',help='fist vcf file')
     vcfcmp.add_argument('--vcf2',help='second vcf file')
-    vcfcmp.add_argument('--fasta',help='reference FASTA file')
+    vcfcmp.add_argument('--cores',type=int,default=8,help='The number of cores to use for processing')
     vcfcmp.set_defaults(func=compareVCF)
 
     '''-----------------------
@@ -249,7 +249,7 @@ def ponytoolsCLI():
             sys.excepthook = ultratb.FormattedTB(
                 mode='Verbose', color_scheme='Linux', call_pdb=1
             )
-        sys.exit(return_value)
+        sys.exit()#return_value)
 
 if __name__ == '__main__':
     ponytoolsCLI()
