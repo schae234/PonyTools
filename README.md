@@ -36,7 +36,7 @@ source activate ponytools
 
 If you already have anaconda installed, you can install all the requirements from the conda
 `environment.yml` package:
-```
+
 ```
 git clone git@github.com:schae234/PonyTools.git
 cd PonyTools
