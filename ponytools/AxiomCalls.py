@@ -90,7 +90,7 @@ class AxiomCalls(object):
         ----------
         filename : str
             output filename
-        Fasta : ponytools.Fasta instance (default: None)
+        Fasta : locuspocuss.Fasta instance (default: None)
             Proper reference information. If None, default REF is A Allele.
         AxiomAnnot : ponytool.AxiomAnnot instance
             Probe information.
@@ -122,7 +122,8 @@ class AxiomCalls(object):
             # reset index and join tables
             variants = AxiomAnnot._annot.reset_index().set_index('Probe Set ID')
             # Print the chromosomes in the order they appear in the fasta file
-            for chrom_name in Fasta.added_order:
+            for chrom in Fasta:
+                chrom_name = chrom.name
                 log('Printing {}',chrom_name)
                 # Join the variants with the calls (inner) and sort by chromosomal position
                 chrom_vars = variants[variants.cust_chr == chrom_name].join(
