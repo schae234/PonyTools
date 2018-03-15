@@ -26,29 +26,29 @@ def smpl_annot(tmpdir):
 @pytest.fixture()
 def smpl_fasta():
     ''' A simple fasta that agrees with smpl_annot'''
-    fasta = Fasta()
-    chr1 = Chromosome('A'*500000)
-    chr2 = Chromosome('C'*500000)
-    chr3 = Chromosome('G'*500000)
-    chr4 = Chromosome('T'*500000)
-    fasta.add_chrom('chr1',chr1)   
-    fasta.add_chrom('chr2',chr2)   
-    fasta.add_chrom('chr3',chr3)   
-    fasta.add_chrom('chr4',chr4)   
+    fasta = Fasta('smpl_fasta')
+    chr1 = Chromosome('chr1','A'*500000)
+    chr2 = Chromosome('chr2','C'*500000)
+    chr3 = Chromosome('chr3','G'*500000)
+    chr4 = Chromosome('chr4','T'*500000)
+    fasta.add_chrom(chr1,force=True)   
+    fasta.add_chrom(chr2,force=True)   
+    fasta.add_chrom(chr3,force=True)   
+    fasta.add_chrom(chr4,force=True)   
     return fasta
 
 @pytest.fixture()
 def alt_fasta():
     ''' A simple fasta that has all alt calls for smpl_annot'''
-    fasta = Fasta()
-    chr1 = Chromosome('C'*500000)
-    chr2 = Chromosome('G'*500000)
-    chr3 = Chromosome('T'*500000)
-    chr4 = Chromosome('A'*500000)
-    fasta.add_chrom('chr1',chr1)   
-    fasta.add_chrom('chr2',chr2)   
-    fasta.add_chrom('chr3',chr3)   
-    fasta.add_chrom('chr4',chr4)   
+    fasta = Fasta('alt_fasta')
+    chr1 = Chromosome('chr1','C'*500000)
+    chr2 = Chromosome('chr2','G'*500000)
+    chr3 = Chromosome('chr3','T'*500000)
+    chr4 = Chromosome('chr4','A'*500000)
+    fasta.add_chrom(chr1,force=True)   
+    fasta.add_chrom(chr2,force=True)   
+    fasta.add_chrom(chr3,force=True)   
+    fasta.add_chrom(chr4,force=True)   
     return fasta
 
 @pytest.fixture()
