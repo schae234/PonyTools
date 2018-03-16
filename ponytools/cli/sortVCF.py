@@ -3,7 +3,7 @@ import sys
 import tempfile
 import resource
 from optparse import OptionParser
-from ponytools.Fasta import Fasta
+from locuspocus import Fasta
 
 
 def log(message,*formatting):
