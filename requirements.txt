@@ -1,2 +1,8 @@
-git+https://github.com/LinkageIO/Minus80.git@v0.1.0
+numpy
+Cython
+scipy
+panda
+matplotlib
+git+https://github.com/LinkageIO/Minus80.git
 git+https://github.com/LinkageIO/LocusPocus.git
+
