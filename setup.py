@@ -37,10 +37,7 @@ class PostDevelopCommand(develop):
 class PostInstallCommand(install):
     """Post-installation for installation mode."""
     def run(self):
-        check_call('''\
-        pip install -r requirements.txt
-        '''.split())
-        install.run(self)
+        pass
 
 setup(
     name = 'ponytools',
@@ -68,7 +65,10 @@ setup(
         'pandas>=0.16.2',
         'ipython>=4.1.2',
         'scipy>=0.16.0',
-        'ipdb>=0.8'
+        'ipdb>=0.8',
+        'cython>=0.25.2',
+        'numpy?=1.12.0',
+        'tqdm'
     ],
 
     author = 'Rob Schaefer',
