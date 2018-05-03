@@ -67,7 +67,7 @@ setup(
         'scipy>=0.16.0',
         'ipdb>=0.8',
         'cython>=0.25.2',
-        'numpy?=1.12.0',
+        'numpy>=1.12.0',
         'tqdm'
     ],
 
