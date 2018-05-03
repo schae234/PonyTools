@@ -52,7 +52,8 @@ setup(
         'ipdb>=0.8',
         'cython>=0.25.2',
         'numpy>=1.12.0',
-        'tqdm'
+        'tqdm',
+        'pysam>=0.14.1'
     ],
 
     author = 'Rob Schaefer',
