@@ -52,7 +52,7 @@ setup(
         'ipdb>=0.8',
         'cython>=0.25.2',
         'numpy>=1.12.0',
-        'tqdm',
+        'tqdm>=4.23.2',
         'pysam>=0.14.1'
     ],
 
