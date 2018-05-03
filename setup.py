@@ -25,20 +25,6 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
-class PostDevelopCommand(develop):
-    """Post-installation for development mode."""
-    def run(self):
-        print('Running post-installation for apsw')
-        check_call('''\
-        pip install -r requirements.txt
-        '''.split())
-        develop.run(self)
-
-class PostInstallCommand(install):
-    """Post-installation for installation mode."""
-    def run(self):
-        pass
-
 setup(
     name = 'ponytools',
     version = find_version('ponytools','__init__.py'),
@@ -50,8 +36,6 @@ setup(
     ext_modules = [],
     cmdclass = {
         #'build_ext': build_ext
-        'develop': PostDevelopCommand,
-        'install': PostInstallCommand,
     },
     package_data={
         'MNEc2MAnnot':'data/MNEc2M_Annotation.csv.gz', 
