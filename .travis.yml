@@ -6,14 +6,21 @@ python:
 env:
   - LD_LIBRARY_PATH=$HOME/.ponytools/lib:$LD_LIBRARY_PATH PATH=$HOME/.ponytools/bin:$HOME/.ponytools/conda/bin:$PATH
 install:
-  - ./install.py
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda install pytest-cov
+  - conda create -q -n travis python=3
+  - source activate travis
+  - pip install .
 script:  
+  - pip install pytest pytest-cov
   - source $HOME/.ponytools/conda/bin/activate ponytools
   - export PATH=/home/travis/.ponytools/bin/:$PATH
   - which py.test
-  - py.test tests/
+  - py.test tests/ -v --cov=ponytools
+after_sucess:
+  - coveralls
