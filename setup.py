@@ -28,6 +28,39 @@ def find_version(*file_paths):
 setup(
     name = 'ponytools',
     version = find_version('ponytools','__init__.py'),
+
+    description = 'Computational tools that you will ride into the FUTURE.',
+    url = 'https://github.com/schae234/PonyTools',
+
+    author = 'Rob Schaefer',
+    author_email = 'rob@linkage.io',
+    license = "Copyright Linkage Analytics 2016. Available under the MIT License",
+
+    classifiers=[
+	# How mature is this project? Common values are
+	#   3 - Alpha
+	#   4 - Beta
+	#   5 - Production/Stable
+	'Development Status :: 4 - Beta',
+
+	# Indicate who your project is intended for
+	'Intended Audience :: Developers',
+	'Topic :: Software Development :: Build Tools',
+
+	# Pick your license as you wish (should match "license" above)
+	 'License :: OSI Approved :: MIT License',
+
+	# Specify the Python versions you support here. In particular, ensure
+	# that you indicate whether you support Python 2, Python 3 or both.
+	'Programming Language :: Python :: 3',
+	'Programming Language :: Python :: 3.6',
+    ],
+    keywords='data genetics biology', 
+    project_urls={
+        'Source' : 'https://github.com/schae234/PonyTools',
+        'Tracker' : 'https://github.com/schae234/PonyTools/issues'
+    },
+
     packages = find_packages(),
     scripts = [
        'ponytools/cli/ponytools'     
@@ -53,13 +86,10 @@ setup(
         'cython>=0.25.2',
         'numpy>=1.12.0',
         'tqdm>=4.23.2',
-        'pysam>=0.14.1'
+        'pysam>=0.14.1',
+        'minus80>=0.1.0',
+        'locuspocus>=0.1.0'
     ],
 
-    author = 'Rob Schaefer',
-    author_email = 'schae234@gmail.com',
-    description = 'Computational tools that you will ride into the FUTURE.',
-    license = "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License",
-    url = 'https://github.com/schae234/PonyTools',
 
 )
