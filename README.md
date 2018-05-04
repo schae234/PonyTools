@@ -23,23 +23,24 @@ Includes command line tools to:
 
 Installation
 ------------
-Ponytool was developed using python 3.4
+**Ponytool was developed using python 3.6**
 
-For an express installation, use the included installtion script. This will create an anaconda
-virtual environment
+For best results, install ponytools into a fresh virtual environment.
+
+### Stable Version
+The most recent recent stable version is on pypi
 ```
+pip install ponytools
+```
+
+### Bleeding Edge version
+To install the developmental version from github:
+```
+# using anaconda virtual env
+conda create -n ponytools python=3
+source activate ponytools
 git clone git@github.com:schae234/PonyTools.git
 cd PonyTools
-./install.sh
-source activate ponytools
+pip install .
 ```
 
-If you already have anaconda installed, you can install all the requirements from the conda
-`environment.yml` package:
-
-```
-git clone git@github.com:schae234/PonyTools.git
-cd PonyTools
-conda env create -f environment.yml
-source activate ponytools
-```
