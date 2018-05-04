@@ -1,23 +1,30 @@
 language: python
 python:
-  - "3.6"
-
-# Setup anaconda
+- '3.6'
 env:
-  - LD_LIBRARY_PATH=$HOME/.ponytools/lib:$LD_LIBRARY_PATH PATH=$HOME/.ponytools/bin:$HOME/.ponytools/conda/bin:$PATH
+- LD_LIBRARY_PATH=$HOME/.ponytools/lib:$LD_LIBRARY_PATH PATH=$HOME/.ponytools/bin:$HOME/.ponytools/conda/bin:$PATH
 install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  - conda info -a
-  - conda create -q -n travis python=3
-  - source activate travis
-  - pip install .
-script:  
-  - pip install pytest pytest-cov
-  - py.test tests/ -v --cov=ponytools
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- conda create -q -n travis python=3
+- source activate travis
+- pip install .
+script:
+- pip install pytest pytest-cov
+- py.test tests/ -v --cov=ponytools
 after_sucess:
-  - coveralls
+- coveralls
+deploy:
+  provider: pypi
+  user: schae234
+  password:
+    secure: nYpwp+JjmfGE0+S/UDjVi8fKvAyRASY6uFFJ1gGfGFmt8PD6Og5Lucsd2cihp9e41HMxzbPu5naHoai9kREX7/i5zblbbcI+uAgRLE9/zyA9NEcARD1B3emd3iD7572BctEfJ2fREVVLXtI6rHaJCXupnuW6hKzIqJsexGc0KoE=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: schae234/PonyTools
