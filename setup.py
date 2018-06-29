@@ -87,8 +87,8 @@ setup(
         'numpy>=1.12.0',
         'tqdm>=4.23.2',
         'pysam>=0.14.1',
-        'minus80>=0.1.0',
-        'locuspocus>=0.1.0'
+        'minus80>=0.1.2',
+        'locuspocus>=0.1.1'
     ],
 
 
