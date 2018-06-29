@@ -5,6 +5,8 @@ import resource
 from optparse import OptionParser
 from locuspocus import Fasta
 
+import minus80 as m80
+
 
 def log(message,*formatting):
     print(message.format(*formatting),file=sys.stderr)
@@ -23,10 +25,13 @@ def sortVCF(args):
 
     log("Sorting {}",vcf_file)
     # Get the chromosome order
-    fasta = Fasta.from_file(fasta_file,nickname=(r'.*chromosome ([\dX]+).*',r'chr\1')) 
+    if m80.Tools.available(name=fasta_file,dtype="Fasta"):
+        fasta = Fasta(fasta_file)
+    else:
+        fasta = Fasta.from_file(fasta_file) 
     # Iterate through the chromosome keys and open temp files
     try:
-        for chrom in fasta.chroms.keys():
+        for chrom in fasta.chrom_names():
             temps[chrom] = tempfile.NamedTemporaryFile('w') 
             chroms.append(chrom)
     except Exception as e:
@@ -39,8 +44,6 @@ def sortVCF(args):
                 headers.append(line.strip())
             else:
                 chrom,pos,*junk = line.split()
-                if chrom in fasta.nicknames:
-                    chrom = fasta.nicknames[chrom]
                 temps[chrom].write(line)
     # close all temp files
     for key,val in temps.items():
