@@ -79,10 +79,10 @@ setup(
     ],
     install_requires = [
         'matplotlib>=1.4.3',
-        'pandas>=0.16.2',
+        'pandas>=0.23.3',
         'ipython>=4.1.2',
-        'numpy>=1.12.0',
-        'scipy>=0.16.0',
+        'numpy>=1.14.5',
+        'scipy>=1.1.0',
         'ipdb>=0.8',
         'cython>=0.25.2',
         'tqdm>=4.23.2',
